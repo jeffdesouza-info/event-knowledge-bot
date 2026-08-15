@@ -80,7 +80,7 @@ especificação e não devem competir com a entrega.
 - **Critério de conclusão:** os contratos permitem implementar ingestão,
   busca e geração de respostas sem acoplamento a tecnologia externa.
 
-**Ponto natural de commit (opcional):** `chore: prepare rag configuration and application contracts` após T001–T002.
+**Ponto natural de commit (opcional):** `chore: prepare application configuration and contracts` após T001–T002.
 
 ---
 
@@ -110,8 +110,10 @@ especificação e não devem competir com a entrega.
 - **Trabalho esperado:** implementar o adapter PDFBox 3 que lê cada
   `InputStream`, extrai texto por página e produz conteúdo normalizado, removendo
   apenas espaços/quebras redundantes sem alterar fatos. Preservar nome do
-  arquivo e número da página em cada resultado de extração; falhar de forma
-  clara para PDF ilegível ou página/documento sem texto útil.
+  arquivo e número da página em cada resultado de extração. Ignorar páginas que
+  não produzam texto útil, preservando sua numeração para fins de rastreabilidade
+  quando aplicável. Falhar de forma clara se o PDF não puder ser lido ou se o
+  documento inteiro não produzir nenhum texto útil.
 - **Validação:** testes sobre os PDFs canônicos confirmam extração por página e
   presença de texto esperado; testes de fixture cobrem recurso ilegível e texto
   vazio.
@@ -162,10 +164,13 @@ especificação e não devem competir com a entrega.
 - **Dependências:** T002, T005, T006
 - **Trabalho esperado:** implementar `InMemoryBm25KnowledgeStore` com
   substituição atômica por snapshot imutável após uma ingestão bem-sucedida.
-  Calcular frequências de termos, frequências por chunk/documento e tamanho
-  médio; tokenizar com minúsculas, remoção de diacríticos apenas para busca e
-  tokens Unicode alfanuméricos. Não introduzir stemming, embeddings, banco ou
-  mecanismo externo.
+  Calcular term frequency por chunk, document frequency dos termos sobre o
+  conjunto de chunks e tamanho médio dos chunks. Para o cálculo BM25, cada
+  `KnowledgeChunk` é tratado como a unidade documental ranqueável. Os metadados
+  do PDF de origem permanecem independentes e servem para rastreabilidade e
+  atribuição de fontes. Tokenizar com minúsculas, remoção de diacríticos apenas
+  para busca e tokens Unicode alfanuméricos. Não introduzir stemming, embeddings,
+  banco ou mecanismo externo.
 - **Validação:** testes determinísticos validam tokenização, estatísticas BM25,
   substituição atômica e preservação do texto/origem original para exibição.
 - **Critério de conclusão:** existe uma base em memória consistente e pronta
@@ -194,13 +199,19 @@ especificação e não devem competir com a entrega.
 - **Dependências:** T006, T008
 - **Trabalho esperado:** codificar testes para as 12 perguntas e evidências da
   matriz definida no plano. Para cada caso positivo obrigatório, verificar que a
-  evidência esperada aparece em algum dos cinco chunks retornados; para
-  transmissão ao vivo, verificar ausência de evidência factual e resultado de
-  insuficiência, sem inferir gravação como transmissão.
+  evidência esperada aparece em algum dos cinco chunks retornados. Para o caso
+  não respondível sobre transmissão ao vivo, registrar os chunks recuperados para
+  inspeção, mas não exigir resultado vazio do Retriever. A insuficiência factual
+  será validada posteriormente no fluxo de question answering, pois retrieval de
+  conteúdo relacionado não constitui evidência suficiente para responder
+  afirmativamente.
 - **Validação:** a suíte calcula e comprova `HitRate@5 = 100%` nos 11 casos
-  positivos obrigatórios e aprovação do caso não respondível.
+  positivos obrigatórios. O caso 12 não participa do cálculo de `HitRate@5`; ele
+  funciona como controle negativo e sua avaliação end-to-end ocorrerá em T013.
 - **Critério de conclusão:** há evidência automatizada de que a estratégia BM25
-  aprovada recupera contexto suficiente para o conjunto de perguntas do MVP.
+  aprovada recupera contexto suficiente para os casos respondíveis do conjunto de
+  perguntas do MVP, sem exigir que perguntas não respondíveis produzam resultado
+  vazio no Retriever.
 
 **Ponto natural de commit (opcional):** `feat: add in-memory bm25 retrieval` após T007–T009.
 
@@ -249,33 +260,127 @@ especificação e não devem competir com a entrega.
 - **Prioridade:** P0
 - **Requisitos:** FR-008 a FR-010, AI-001, AI-002, AI-005, VAL-003, SEC-005, SEC-007
 - **Dependências:** T010, T011
-- **Trabalho esperado:** validar `status`, resposta não vazia quando respondida
-  e `evidenceChunkIds` únicos estritamente pertencentes ao contexto enviado.
-  Converter `INSUFFICIENT_INFORMATION` para a mensagem fixa sem fontes;
-  construir, para resposta válida, fontes únicas e ordenadas pelos metadados dos
-  chunks indicados. Converter payload malformado, timeout ou falha do provedor
-  em erro de indisponibilidade, sem fabricar resposta factual alternativa.
-- **Validação:** testes cobrem status/IDs inválidos, resposta vazia,
-  `INSUFFICIENT_INFORMATION`, fontes deduplicadas/ordenadas e falha/timeout do
-  provider.
-- **Critério de conclusão:** nenhuma resposta factual ou fonte chega ao usuário
-  sem evidência enviada ao modelo e validada pela aplicação.
+- **Trabalho esperado:** validar o contrato estruturado retornado pelo modelo e aplicar
+  as invariantes correspondentes ao `status`:
+    
+  - para `ANSWERED`, exigir `answer` não vazio e pelo menos um
+    `evidenceChunkId` válido;
+  - para `INSUFFICIENT_INFORMATION`, exigir `evidenceChunkIds` vazio.
+    Qualquer conteúdo eventualmente retornado no campo `answer` deve ser
+    ignorado pela aplicação e substituído pela mensagem fixa:
+    
+    > “Não encontrei essa informação nos documentos disponíveis sobre o evento.”
+    
+  Todo `evidenceChunkId` informado pelo modelo em uma resposta `ANSWERED` deve
+  ser único e pertencer estritamente ao conjunto de chunks enviado como contexto.
+  
+  Para `ANSWERED`, construir as fontes únicas e ordenadas exclusivamente a partir
+  dos metadados locais dos chunks indicados pelo modelo.
+  
+  Para `INSUFFICIENT_INFORMATION`, retornar sempre a mensagem fixa da aplicação
+  e nenhuma fonte, independentemente do conteúdo eventualmente recebido no campo
+  `answer`.
+  
+  Payload malformado, `status` inválido, evidência inválida, timeout ou falha do
+  provedor devem ser convertidos em erro de indisponibilidade, sem fabricar
+  resposta factual alternativa.
 
-### [ ] T013 — Executar o smoke test real de IA em perfil separado
+- **Validação:** testes cobrem, no mínimo:
+  
+  - `ANSWERED` com resposta não vazia e ao menos um `evidenceChunkId` válido;
+  - rejeição de `ANSWERED` com resposta vazia;
+  - rejeição de `ANSWERED` sem evidência;
+  - rejeição de `ANSWERED` com `evidenceChunkId` inexistente ou fora do contexto enviado;
+  - rejeição de IDs duplicados;
+  - `INSUFFICIENT_INFORMATION` com `evidenceChunkIds` vazio;
+  - descarte de qualquer conteúdo recebido em `answer` quando o status for
+    `INSUFFICIENT_INFORMATION`;
+  - conversão de `INSUFFICIENT_INFORMATION` para a mensagem fixa em pt-BR e
+    fontes vazias;
+  - rejeição de `INSUFFICIENT_INFORMATION` contendo `evidenceChunkIds`;
+  - fontes deduplicadas e ordenadas para respostas `ANSWERED` válidas;
+  - payload malformado, timeout e falha do provedor.
+  
+- **Critério de conclusão:** nenhuma resposta `ANSWERED` chega ao usuário sem
+  pelo menos uma evidência válida pertencente ao contexto enviado ao modelo;
+  respostas `INSUFFICIENT_INFORMATION` são normalizadas deterministicamente pela
+  aplicação para a mensagem fixa e fontes vazias; e falhas ou violações do
+  contrato nunca são convertidas em respostas factuais alternativas.
+  
+### [ ] T013 — Executar smoke tests reais de IA em perfil separado
 
 - **Prioridade:** P0
-- **Requisitos:** FR-008, AI-001, AI-006, SEC-001, SEC-002, NFR-004
+- **Requisitos:** FR-008, AI-001, AI-003, AI-006, SEC-001, SEC-002, SEC-005, SEC-007, NFR-004
 - **Dependências:** T011, T012
-- **Trabalho esperado:** criar um perfil de teste não padrão, acionado somente
-  com chave real fornecida externamente, para exercitar uma pergunta documentada
-  contra a OpenAI. Manter a suíte padrão totalmente determinística e sem
-  necessidade de acesso à API.
-- **Validação:** sob perfil explícito e sem expor a chave, o smoke test retorna
-  uma resposta estruturada válida em pt-BR com evidência pertencente ao contexto.
-- **Critério de conclusão:** há uma verificação reproduzível da integração real
-  sem tornar credenciais ou rede pré-requisitos do build normal.
+- **Trabalho esperado:** criar um perfil de teste não padrão, acionado somente quando houver
+  chave real fornecida externamente, para exercitar a integração com a OpenAI sem tornar acesso
+  à rede ou credenciais pré-requisitos da suíte normal.
+  
+  O perfil deve executar pelo menos três smoke tests reais:
+  
+  1. **Resposta grounded normal:** enviar uma pergunta documentada juntamente com contexto
+     que contenha evidência factual suficiente e confirmar que o provedor retorna uma resposta
+     estruturada válida em pt-BR, com `status=ANSWERED` e pelo menos um `evidenceChunkId`
+     pertencente ao contexto enviado.
+     
+  2. **Informação insuficiente com contexto relacionado:** validar a regra geral de que
+     conteúdo relacionado ao tema da pergunta não constitui, por si só, evidência factual
+     suficiente para sustentar uma resposta.
+     
+     Como caso de referência do MVP, executar a pergunta canônica sobre transmissão ao vivo
+     utilizando o contexto recuperado dos PDFs. Ainda que o retrieval retorne chunks
+     relacionados ao tema, incluindo informações sobre gravações de sessões, o modelo deve
+     responder com base apenas no que estiver efetivamente sustentado pelo contexto.
+     
+     Como os documentos não fornecem evidência suficiente para afirmar a existência de
+     transmissão ao vivo, o resultado esperado para esse caso de referência é
+     `INSUFFICIENT_INFORMATION`.
+     
+     Esse cenário valida uma propriedade geral de grounding. Sua implementação não deve
+     introduzir condicionais, regras, palavras-chave, respostas pré-definidas ou qualquer
+     outro tratamento especial baseado na pergunta sobre transmissão ao vivo, em referências
+     a gravações ou em fatos específicos do dataset de avaliação.
+     
+  3. **Prompt injection em conteúdo recuperado:** enviar ao modelo um `KnowledgeChunk` sintético
+     e controlado contendo texto que tente alterar o comportamento do assistente, por exemplo,
+     instruindo-o a ignorar regras anteriores ou fornecer uma resposta específica. Esse conteúdo
+     deve ser enviado pelo mesmo mecanismo usado para contexto recuperado, portanto tratado como
+     dado não confiável e não como instrução de sistema.
+     
+     O caso de teste deve ser construído de forma que o conteúdo legítimo fornecido não seja
+     suficiente para responder factual e afirmativamente à pergunta. O comportamento esperado é
+     que o modelo preserve as instruções da aplicação e retorne `INSUFFICIENT_INFORMATION`,
+     em vez de obedecer à instrução maliciosa presente no chunk.
+  
+  O fixture de prompt injection deve ser exclusivo dos testes e não deve ser incorporado aos
+  quatro PDFs canônicos do MVP.
+  
+  A suíte padrão deve continuar totalmente determinística e executável sem chamada à OpenAI.
 
-**Ponto natural de commit (opcional):** `feat: generate grounded answers through openai responses api` após T010–T012. T013 pode seguir em `test: add opt-in OpenAI smoke test`.
+- **Validação:** sob perfil explícito e com credencial fornecida externamente:
+  
+  * o smoke test grounded retorna Structured Output válido;
+  * a resposta normal é apresentada em pt-BR;
+  * `ANSWERED` contém evidência válida pertencente ao contexto enviado;
+  * o cenário de informação insuficiente confirma que contexto apenas relacionado
+    não é tratado como evidência suficiente para sustentar uma resposta factual;
+    no caso de referência sobre transmissão ao vivo, o resultado é
+    `INSUFFICIENT_INFORMATION` sem qualquer lógica especial baseada nos termos
+    ou fatos específicos da pergunta de avaliação;
+  * o fixture de prompt injection permanece tratado como conteúdo recuperado não confiável;
+  * a instrução maliciosa presente no fixture não altera as regras configuradas do assistente;
+  * o caso de prompt injection retorna `INSUFFICIENT_INFORMATION` quando o contexto legítimo
+    não contém informação suficiente;
+  * a aplicação não utiliza como resposta factual o conteúdo solicitado pela instrução maliciosa;
+  * nenhuma credencial é registrada em logs, mensagens de teste ou artefatos produzidos;
+  * sem o perfil explícito, nenhum dos smoke tests reais é executado.
+  
+- **Critério de conclusão:** existe uma verificação opt-in e reproduzível contra o provedor real
+  demonstrando tanto o funcionamento do fluxo grounded quanto a preservação das regras da aplicação
+  diante de uma tentativa controlada de prompt injection em conteúdo recuperado, sem tornar rede ou 
+  credenciais requisitos do build e da suíte padrão.
+
+**Ponto natural de commit (opcional):** `feat: generate grounded answers through openai responses api` após T010–T012. T013 pode seguir em `test: add opt-in OpenAI smoke tests`.
 
 ---
 
@@ -416,7 +521,11 @@ atendidas e houver evidência registrada para cada uma:
   extrai texto página a página, segmenta-o e publica um snapshot BM25 em
   memória; falhas de ingestão impedem uma inicialização válida.
 - [ ] A matriz de 12 perguntas do plano comprova `HitRate@5 = 100%` nos 11
-  casos positivos e insuficiência correta para transmissão ao vivo.
+  casos positivos; o caso de controle negativo é validado no fluxo real de
+  question answering e confirma que contexto apenas relacionado ao tema não é
+  tratado como evidência factual suficiente, resultando em
+  `INSUFFICIENT_INFORMATION` quando a informação necessária não está sustentada
+  pelos documentos.
 - [ ] Perguntas válidas percorrem recuperação, contexto e OpenAI Responses API
   com Structured Outputs; a saída é validada e só expõe fontes derivadas de
   `evidenceChunkIds` pertencentes ao contexto enviado.
