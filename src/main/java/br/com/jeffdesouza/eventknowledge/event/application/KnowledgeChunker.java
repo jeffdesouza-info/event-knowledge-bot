@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 /** Divide texto já normalizado em unidades de recuperação sem cruzar páginas. */
-public final class KnowledgeChunker {
+public class KnowledgeChunker {
 
     public static final int DEFAULT_TARGET_SIZE = 450;
     public static final int DEFAULT_OVERLAP_SIZE = 100;
