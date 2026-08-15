@@ -105,31 +105,35 @@ The document processing workflow must be identifiable in the source code.
 
 ### FR-004 — Segment document content
 
-Extracted document content must be divided into segments suitable for semantic retrieval.
+Extracted document content must be divided into segments suitable for retrieval and contextual answer generation.
 
 The segmentation strategy may be simple for the initial delivery.
 
 ---
 
-### FR-005 — Generate embeddings
+### FR-005 — Prepare document knowledge for retrieval
 
-The application must generate vector embeddings representing document segments.
+Processed document segments must be made available to the application's retrieval mechanism together with relevant source metadata.
+
+The specification does not require a specific retrieval representation.
 
 ---
 
-### FR-006 — Store document embeddings
+### FR-006 — Maintain retrievable document knowledge
 
-Generated embeddings must be stored in a mechanism that supports semantic similarity search.
+Processed document segments and their source metadata must remain available to the retrieval mechanism while the application is running.
 
-The initial implementation may use an in-memory embedding store.
+The concrete storage strategy is defined by the technical plan.
 
 ---
 
 ### FR-007 — Retrieve relevant context
 
-When a user submits a question, the application must retrieve document segments semantically relevant to that question.
+When a user submits a question, the application must identify and retrieve document segments relevant to answering that question.
 
-Retrieval must rely on semantic relevance rather than exact keyword matching only.
+The retrieval strategy must provide sufficiently relevant context for the expected MVP question set.
+
+The concrete ranking or retrieval mechanism is defined by the technical plan.
 
 ---
 
@@ -256,7 +260,7 @@ The application must not expose untranslated internal prompts or technical instr
 
 ### AI-007 — Multilingual question handling
 
-When supported by the configured language and embedding models, the assistant should be capable of understanding questions written in languages other than Portuguese.
+When supported by the configured language model and retrieval strategy, the assistant should be capable of understanding questions written in languages other than Portuguese.
 
 Regardless of the input language, the final user-facing answer must follow `AI-006`.
 
@@ -298,7 +302,7 @@ User-facing validation and error messages should be presented in Brazilian Portu
 
 ### SEC-001
 
-LLM and embedding provider credentials must not be committed to Git.
+LLM and, when applicable, embedding provider credentials must not be committed to Git.
 
 ---
 
@@ -537,20 +541,13 @@ The project must not reproduce unrelated domains from larger systems solely for 
 
 ---
 
-### Scenario 2 — Answer requires semantic retrieval
+### Scenario 2 — Relevant information retrieved from document
 
-**Given** the document states:
-
-> Participants may bring one previously registered guest.
-
-**When** the user asks:
-
-> Posso levar alguém comigo?
-
-**Then** the system retrieves the relevant passage
-**And** answers in Brazilian Portuguese that one previously registered guest is allowed.
-
-The answer does not require exact keyword matching.
+**Given** the document contains information explaining that each registered participant may bring one previously registered guest
+**When** the user asks a natural-language question about bringing a guest
+**Then** the system retrieves the relevant document passage
+**And** answers in Brazilian Portuguese that one previously registered
+guest is allowed.
 
 ---
 
@@ -635,9 +632,9 @@ The feature is considered complete when:
 * [ ] the Spring Boot application runs locally;
 * [ ] a real PDF document is loaded by application code;
 * [ ] the document is parsed and segmented;
-* [ ] embeddings are generated;
-* [ ] document embeddings are stored;
-* [ ] semantic retrieval works;
+* [ ] document segments are made available to the retrieval mechanism;
+* [ ] relevant document context can be retrieved from natural-language questions;
+* [ ] retrieval quality is validated against the documented reference questions;
 * [ ] natural-language questions can be submitted;
 * [ ] answers are generated using retrieved document context;
 * [ ] all user-facing answers are generated in Brazilian Portuguese;

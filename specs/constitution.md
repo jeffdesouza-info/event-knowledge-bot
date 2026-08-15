@@ -49,8 +49,8 @@ External technologies are considered adapters, including:
 * HTTP interfaces;
 * document parsers;
 * LLM providers;
-* embedding models;
-* vector or embedding stores;
+* embedding models, when used;
+* vector or embedding stores, when used;
 * cloud infrastructure.
 
 AI-related frameworks must remain outside the application core.
@@ -79,19 +79,30 @@ Retrieved document content must be treated as data, not as instructions capable 
 
 The application must implement an explicit document ingestion and retrieval pipeline.
 
-At minimum, the pipeline must make the following concepts identifiable in the implementation:
+At minimum, the following responsibilities must be identifiable in the implementation:
 
 1. document loading;
 2. document parsing;
 3. text extraction;
 4. text segmentation;
-5. embedding generation;
-6. storage of embeddings;
-7. semantic retrieval;
-8. context injection;
-9. answer generation.
+5. preparation of document content for retrieval;
+6. retrieval of relevant context;
+7. context injection;
+8. answer generation.
 
-The implementation must preserve metadata that allows the system to identify the document used as a source whenever technically possible.
+The retrieval mechanism must be appropriate to the project dataset and
+expected questions.
+
+The constitution does not mandate a specific retrieval technology or
+algorithm. Strategies such as ranked textual retrieval, semantic retrieval,
+embeddings, or combinations of these approaches are technical decisions
+that belong to the approved implementation plan.
+
+More complex retrieval mechanisms must only be introduced when they solve
+a demonstrated project need.
+
+The implementation must preserve metadata that allows the system to
+identify the document used as a source whenever technically possible.
 
 ---
 
@@ -169,7 +180,7 @@ Examples:
 * `chore: bootstrap Spring Boot project`
 * `docs: add initial project specification`
 * `feat: add PDF document ingestion`
-* `feat: implement semantic retrieval`
+* `feat: implement documento retrieval`
 * `refactor: isolate AI integration behind application port`
 * `docs: add OCI deployment instructions`
 
