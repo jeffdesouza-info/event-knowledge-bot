@@ -39,6 +39,8 @@ class CoreContractsTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new ExtractedPage(1, " "))
                 .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new ExtractedPage(" ", 1, "text"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
