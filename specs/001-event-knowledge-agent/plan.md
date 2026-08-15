@@ -8,7 +8,7 @@ Legenda: **R** requisito da constitution/spec; **E** decisão já estabelecida; 
 
 | Área | Base | Decisão |
 |---|---|---|
-| Corpus | R/E | Usar somente os quatro PDFs canônicos empacotados como resources; a cópia em `pdfs/` não participa do runtime. |
+| Corpus | R/E | Usar somente os quatro PDFs canônicos empacotados em src/main/resources/documents/pdfs como fontes de conhecimento do runtime. |
 | Ingestão e armazenamento | R/E | Ingerir no startup e manter os chunks em memória durante a execução. |
 | Busca | R/E | Usar BM25 textual ranqueado, sem embeddings. |
 | Extração | N | Adicionar Apache PDFBox 3 para extrair texto página a página de `Resource`/`InputStream`, sem depender de caminhos locais. |
@@ -121,6 +121,8 @@ Contratos HTTP mínimos:
 A página em `src/main/resources/static/` terá formulário, estado de carregamento, resposta, lista de fontes clicáveis e erro em pt-BR. Usará `fetch` para a API same-origin e `textContent` para renderizar dados, sem framework JavaScript ou CORS adicional.
 
 ## Configuração, testes e deploy
+
+- O Maven Wrapper será o mecanismo padrão do projeto para comandos de build local e de build voltado ao deploy. Os comandos documentados no projeto devem preferir `./mvnw` em ambientes Unix-like e `mvnw.cmd` no Windows.
 
 - Adicionar `spring-boot-starter-restclient`, PDFBox e Actuator. O uso de Spring `RestClient` será uma dependência explícita, sem depender de transitividade acidental. Não adicionar SDK específico da OpenAI, LangChain, biblioteca de embeddings ou mecanismo externo de busca.
 
