@@ -5,7 +5,7 @@ import br.com.jeffdesouza.eventknowledge.event.domain.EventDocument;
 import java.util.List;
 import java.util.Objects;
 
-/** Resultado completo e imutável, pronto para uma futura publicação no KnowledgeStore. */
+/** Resultado completo e imutável usado para publicar o snapshot após a ingestão. */
 public record IngestionResult(List<EventDocument> documents, List<KnowledgeChunk> chunks) {
 
     public IngestionResult {

@@ -7,6 +7,7 @@ import br.com.jeffdesouza.eventknowledge.event.application.port.DocumentLoader;
 import br.com.jeffdesouza.eventknowledge.event.application.port.DocumentTextExtractor;
 import br.com.jeffdesouza.eventknowledge.event.infrastructure.classpath.ClasspathPdfDocumentAdapter;
 import br.com.jeffdesouza.eventknowledge.event.infrastructure.pdf.PdfBoxDocumentTextExtractor;
+import br.com.jeffdesouza.eventknowledge.event.infrastructure.bm25.InMemoryBm25KnowledgeStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,5 +38,10 @@ public class EventKnowledgeConfiguration {
     KnowledgeIngestion knowledgeIngestion(DocumentCatalog catalog, DocumentLoader loader,
                                            DocumentTextExtractor extractor, KnowledgeChunker chunker) {
         return new KnowledgeIngestion(catalog, loader, extractor, chunker);
+    }
+
+    @Bean
+    InMemoryBm25KnowledgeStore knowledgeStore() {
+        return new InMemoryBm25KnowledgeStore();
     }
 }

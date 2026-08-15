@@ -82,6 +82,63 @@ class InMemoryBm25KnowledgeStoreTest {
         assertThat(store.snapshot().chunks()).extracting(KnowledgeChunk::id).containsExactly("old");
     }
 
+    @Test
+    void ranksByPositiveBm25ScoreAndKeepsOriginalChunkData() {
+        InMemoryBm25KnowledgeStore store = store();
+        KnowledgeChunk strongest = chunk("strong", "Raro raro", "strong.pdf", 2, 1);
+        KnowledgeChunk weaker = chunk("weak", "Raro comum", "weak.pdf", 1, 1);
+        store.replaceAll(List.of(weaker, strongest, chunk("other", "Comum", "other.pdf", 1, 1)));
+
+        assertThat(store.search("RÁRO", 5)).containsExactly(strongest, weaker);
+        assertThat(store.search("RÁRO", 5).getFirst().text()).isEqualTo("Raro raro");
+        assertThat(store.search("RÁRO", 5).getFirst().documentName()).isEqualTo("strong.pdf");
+    }
+
+    @Test
+    void respectsRequestedLimitAndConfiguredMaximumTopK() {
+        InMemoryBm25KnowledgeStore store = store();
+        List<KnowledgeChunk> chunks = java.util.stream.IntStream.rangeClosed(1, 6)
+                .mapToObj(index -> chunk("c" + index, "alvo", "file-" + index + ".pdf", 1, 1))
+                .toList();
+        store.replaceAll(chunks);
+
+        assertThat(store.search("alvo", 2)).hasSize(2);
+        assertThat(store.search("alvo", 99)).hasSize(5);
+    }
+
+    @Test
+    void excludesChunksWithoutPositiveEvidenceAndReturnsEmptyWhenNothingMatches() {
+        InMemoryBm25KnowledgeStore store = store();
+        store.replaceAll(List.of(
+                chunk("match", "Acesso Premium", "a.pdf", 1, 1),
+                chunk("unrelated", "Estacionamento", "b.pdf", 1, 1)));
+
+        assertThat(store.search("Premium", 5)).extracting(KnowledgeChunk::id)
+                .containsExactly("match");
+        assertThat(store.search("transmissão ao vivo", 5)).isEmpty();
+        assertThat(store.search("!!!", 5)).isEmpty();
+    }
+
+    @Test
+    void usesDeterministicFilePageAndOrdinalTieBreakers() {
+        InMemoryBm25KnowledgeStore store = store();
+        KnowledgeChunk laterPage = chunk("b", "termo", "a.pdf", 2, 1);
+        KnowledgeChunk earlierFile = chunk("c", "termo", "a.pdf", 1, 2);
+        KnowledgeChunk first = chunk("a", "termo", "a.pdf", 1, 1);
+        store.replaceAll(List.of(laterPage, first, earlierFile));
+
+        assertThat(store.search("termo", 5)).containsExactly(first, earlierFile, laterPage);
+    }
+
+    @Test
+    void tokenizesQuestionWithTheSameStrategyAsIndexedText() {
+        InMemoryBm25KnowledgeStore store = store();
+        KnowledgeChunk chunk = chunk("c1", "A entrada Premium fica no Portão B", "venue.pdf", 1, 1);
+        store.replaceAll(List.of(chunk));
+
+        assertThat(store.search("portao PREMIUM", 5)).containsExactly(chunk);
+    }
+
     private static InMemoryBm25KnowledgeStore store() {
         return new InMemoryBm25KnowledgeStore();
     }

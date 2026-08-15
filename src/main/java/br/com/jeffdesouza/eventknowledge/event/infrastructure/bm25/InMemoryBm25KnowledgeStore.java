@@ -11,10 +11,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 /** Store em memória que prepara e publica snapshots textuais para o BM25. */
 public final class InMemoryBm25KnowledgeStore implements KnowledgeStore {
+
+    private static final double K1 = 1.2d;
+    private static final double B = 0.75d;
+    private static final int MAX_TOP_K = 5;
 
     private final Bm25Tokenizer tokenizer;
     private final AtomicReference<Bm25Snapshot> publishedSnapshot;
@@ -40,10 +45,62 @@ public final class InMemoryBm25KnowledgeStore implements KnowledgeStore {
         publishedSnapshot.set(prepared);
     }
 
-    /** A consulta e o ranking BM25 pertencem à T008. */
     @Override
     public List<KnowledgeChunk> search(String question, int limit) {
-        throw new UnsupportedOperationException("BM25 search is implemented in T008");
+        if (question == null || question.isBlank() || limit <= 0) {
+            return List.of();
+        }
+
+        Bm25Snapshot current = publishedSnapshot.get();
+        if (current.chunks().isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> queryTerms = new LinkedHashSet<>(tokenizer.tokenize(question));
+        if (queryTerms.isEmpty()) {
+            return List.of();
+        }
+
+        int resultLimit = Math.min(limit, MAX_TOP_K);
+        return current.chunks().stream()
+                .map(chunk -> new ScoredChunk(chunk, score(chunk.id(), queryTerms, current)))
+                .filter(scored -> scored.score() > 0.0d)
+                .sorted(Comparator.comparingDouble(ScoredChunk::score).reversed()
+                        .thenComparing(scored -> scored.chunk().documentName())
+                        .thenComparingInt(scored -> scored.chunk().page())
+                        .thenComparingInt(scored -> scored.chunk().ordinal())
+                        .thenComparing(scored -> scored.chunk().id()))
+                .limit(resultLimit)
+                .map(ScoredChunk::chunk)
+                .toList();
+    }
+
+    private static double score(String chunkId, Set<String> queryTerms, Bm25Snapshot snapshot) {
+        int documentCount = snapshot.documentCount();
+        int chunkSize = snapshot.tokenCountByChunkId().getOrDefault(chunkId, 0);
+        double averageChunkSize = snapshot.averageChunkSize();
+        double normalization = averageChunkSize == 0.0d
+                ? 1.0d
+                : 1.0d - B + B * chunkSize / averageChunkSize;
+
+        double score = 0.0d;
+        Map<String, Integer> frequencies = snapshot.termFrequencyByChunkId().getOrDefault(chunkId, Map.of());
+        for (String term : queryTerms) {
+            int documentFrequency = snapshot.documentFrequency().getOrDefault(term, 0);
+            int termFrequency = frequencies.getOrDefault(term, 0);
+            if (documentFrequency == 0 || termFrequency == 0) {
+                continue;
+            }
+            double inverseDocumentFrequency = Math.log(1.0d
+                    + (documentCount - documentFrequency + 0.5d) / (documentFrequency + 0.5d));
+            score += inverseDocumentFrequency
+                    * (termFrequency * (K1 + 1.0d))
+                    / (termFrequency + K1 * normalization);
+        }
+        return score;
+    }
+
+    private record ScoredChunk(KnowledgeChunk chunk, double score) {
     }
 
     private Bm25Snapshot prepareSnapshot(Collection<KnowledgeChunk> chunks) {

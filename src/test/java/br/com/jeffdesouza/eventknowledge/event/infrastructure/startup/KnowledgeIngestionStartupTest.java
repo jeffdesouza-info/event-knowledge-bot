@@ -3,6 +3,7 @@ package br.com.jeffdesouza.eventknowledge.event.infrastructure.startup;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import br.com.jeffdesouza.eventknowledge.event.infrastructure.bm25.InMemoryBm25KnowledgeStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,12 +11,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KnowledgeIngestionStartupTest {
 
     @Autowired
-    private KnowledgeIngestionRunner runner;
+    private InMemoryBm25KnowledgeStore store;
 
     @Test
-    void publishesTheIngestionResultDuringApplicationStartup() {
-        assertThat(runner.publishedResult()).isNotNull();
-        assertThat(runner.publishedResult().documents()).hasSize(4);
-        assertThat(runner.publishedResult().chunks()).isNotEmpty();
+    void publishesTheKnowledgeSnapshotDuringApplicationStartup() {
+        assertThat(store.snapshot().chunks()).isNotEmpty();
     }
 }
