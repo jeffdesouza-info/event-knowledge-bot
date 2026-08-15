@@ -1,7 +1,5 @@
 package br.com.jeffdesouza.eventknowledge.event.domain;
 
-import java.util.Objects;
-
 /** Identidade e metadados essenciais de um documento associado ao evento. */
 public record EventDocument(String name) {
 

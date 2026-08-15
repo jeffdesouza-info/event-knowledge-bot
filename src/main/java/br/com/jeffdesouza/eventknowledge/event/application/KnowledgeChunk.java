@@ -1,7 +1,5 @@
 package br.com.jeffdesouza.eventknowledge.event.application;
 
-import java.util.Objects;
-
 /** Unidade técnica de recuperação; não representa uma entidade do domínio do evento. */
 public record KnowledgeChunk(
         String id,
