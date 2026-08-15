@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: event-knowledge-bot
+
+event-knowledge:
+  documents:
+    location-pattern: classpath*:/documents/pdfs/*.pdf
+  chunking:
+    target-size: 450
+    overlap-size: 100
+  retrieval:
+    top-k: 5
+  question:
+    max-length: 500
+
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:gpt-5.6-luna}
+  timeout: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    br.com.jeffdesouza.eventknowledge: INFO
