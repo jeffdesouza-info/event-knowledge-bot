@@ -1,5 +1,7 @@
 package br.com.jeffdesouza.eventknowledge.configuration;
 
+import br.com.jeffdesouza.eventknowledge.assistant.application.AnswerEventQuestion;
+import br.com.jeffdesouza.eventknowledge.assistant.application.port.AnswerGenerator;
 import br.com.jeffdesouza.eventknowledge.event.application.KnowledgeChunker;
 import br.com.jeffdesouza.eventknowledge.event.application.KnowledgeIngestion;
 import br.com.jeffdesouza.eventknowledge.event.application.port.DocumentCatalog;
@@ -43,5 +45,14 @@ public class EventKnowledgeConfiguration {
     @Bean
     InMemoryBm25KnowledgeStore knowledgeStore() {
         return new InMemoryBm25KnowledgeStore();
+    }
+
+    @Bean
+    AnswerEventQuestion answerEventQuestion(
+            InMemoryBm25KnowledgeStore knowledgeStore,
+            AnswerGenerator answerGenerator,
+            @Value("${event-knowledge.retrieval.top-k:5}") int topK,
+            @Value("${event-knowledge.question.max-length:500}") int maxQuestionLength) {
+        return new AnswerEventQuestion(knowledgeStore, answerGenerator, topK, maxQuestionLength);
     }
 }
