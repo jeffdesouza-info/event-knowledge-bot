@@ -1,0 +1,51 @@
+:root {
+    color-scheme: light;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #1f2937;
+    background: #f3f6fb;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-width: 320px; }
+
+.page-shell { display: grid; min-height: 100vh; place-items: center; padding: 24px; }
+
+.card {
+    width: min(100%, 720px);
+    padding: clamp(24px, 5vw, 48px);
+    background: #fff;
+    border: 1px solid #dce4ef;
+    border-radius: 20px;
+    box-shadow: 0 18px 45px rgb(26 51 84 / 10%);
+}
+
+.eyebrow { margin: 0 0 10px; color: #2563eb; font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+h1, h2, h3 { color: #172554; }
+h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.5rem); }
+.intro { margin: 14px 0 30px; line-height: 1.6; }
+.question-form label, h2, h3 { font-weight: 700; }
+.question-form label { display: block; margin-bottom: 8px; }
+textarea { width: 100%; resize: vertical; padding: 14px; border: 1px solid #b9c6d8; border-radius: 10px; color: inherit; font: inherit; line-height: 1.5; }
+textarea:focus { border-color: #2563eb; outline: 3px solid rgb(37 99 235 / 18%); }
+.form-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 12px; }
+.help-text { color: #5b6b82; font-size: .9rem; }
+button { padding: 11px 20px; border: 0; border-radius: 9px; background: #1d4ed8; color: #fff; cursor: pointer; font: inherit; font-weight: 700; }
+button:hover { background: #1e40af; }
+button:disabled { cursor: wait; opacity: .65; }
+.status { margin: 24px 0 0; padding: 12px 14px; border-radius: 9px; line-height: 1.5; }
+.loading { background: #eff6ff; color: #1e40af; }
+.error { background: #fef2f2; color: #991b1b; }
+.answer-section { margin-top: 32px; padding-top: 26px; border-top: 1px solid #e5e7eb; }
+h2 { margin: 0 0 12px; font-size: 1.3rem; }
+#answer { margin: 0; white-space: pre-wrap; line-height: 1.7; }
+.sources-section { margin-top: 24px; }
+h3 { margin: 0 0 10px; font-size: 1rem; }
+.sources-section ul { display: grid; gap: 8px; margin: 0; padding-left: 20px; }
+.sources-section a { color: #1d4ed8; }
+.sources-section a:hover { color: #1e40af; }
+
+@media (max-width: 480px) {
+    .form-footer { align-items: stretch; flex-direction: column; }
+    button { width: 100%; }
+}

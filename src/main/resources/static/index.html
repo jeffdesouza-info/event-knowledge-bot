@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Faça perguntas sobre o evento e consulte respostas baseadas nos documentos disponíveis.">
+    <title>Assistente do evento</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+</head>
+<body>
+<main class="page-shell">
+    <section class="card" aria-labelledby="page-title">
+        <p class="eyebrow">Conhecimento do evento</p>
+        <h1 id="page-title">Como posso ajudar?</h1>
+        <p class="intro">Faça uma pergunta sobre o evento. As respostas são baseadas nos documentos disponibilizados pela organização.</p>
+
+        <form id="question-form" class="question-form">
+            <label for="question">Sua pergunta</label>
+            <textarea id="question" name="question" rows="4" maxlength="500" required
+                      placeholder="Ex.: Que horas começa o credenciamento?"
+                      aria-describedby="question-help"></textarea>
+            <div class="form-footer">
+                <span id="question-help" class="help-text">Até 500 caracteres.</span>
+                <button id="submit-button" type="submit">Perguntar</button>
+            </div>
+        </form>
+
+        <p id="loading" class="status loading" role="status" aria-live="polite" hidden>Aguardando resposta...</p>
+        <p id="error" class="status error" role="alert" hidden></p>
+
+        <section id="answer-section" class="answer-section" aria-labelledby="answer-title" hidden>
+            <h2 id="answer-title">Resposta</h2>
+            <p id="answer"></p>
+
+            <div id="sources-section" class="sources-section" hidden>
+                <h3>Fontes</h3>
+                <ul id="sources"></ul>
+            </div>
+        </section>
+    </section>
+</main>
+</body>
+</html>
