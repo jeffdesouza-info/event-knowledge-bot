@@ -7,6 +7,8 @@ import br.com.jeffdesouza.eventknowledge.assistant.domain.EventQuestion;
 import br.com.jeffdesouza.eventknowledge.event.application.KnowledgeChunk;
 import br.com.jeffdesouza.eventknowledge.event.application.port.KnowledgeStore;
 import br.com.jeffdesouza.eventknowledge.event.domain.SourceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -17,6 +19,7 @@ import java.util.Set;
 /** Orquestra validação, recuperação e geração da resposta sobre o evento. */
 public final class AnswerEventQuestion {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AnswerEventQuestion.class);
     public static final int DEFAULT_TOP_K = 5;
     public static final int DEFAULT_MAX_QUESTION_LENGTH = 500;
     public static final String INFORMATION_NOT_FOUND =
@@ -46,21 +49,55 @@ public final class AnswerEventQuestion {
     }
 
     public EventAnswer answer(String questionText) {
-        EventQuestion question = validateQuestion(questionText);
-        List<KnowledgeChunk> context = knowledgeStore.search(question.text(), topK);
-        if (context.isEmpty()) {
-            return new EventAnswer(AnswerStatus.INSUFFICIENT_INFORMATION, INFORMATION_NOT_FOUND, List.of());
+        long cycleStartedAt = System.nanoTime();
+        LOGGER.info("question_cycle_started");
+        try {
+            EventQuestion question = validateQuestion(questionText);
+
+            long retrievalStartedAt = System.nanoTime();
+            List<KnowledgeChunk> context = knowledgeStore.search(question.text(), topK);
+            LOGGER.info("retrieval_completed outcome={} chunkCount={} durationMs={}",
+                    context.isEmpty() ? "NO_EVIDENCE" : "CONTEXT_FOUND",
+                    context.size(),
+                    elapsedMillis(retrievalStartedAt));
+            if (context.isEmpty()) {
+                LOGGER.info("question_cycle_completed outcome=INSUFFICIENT_INFORMATION totalDurationMs={}",
+                        elapsedMillis(cycleStartedAt));
+                return new EventAnswer(AnswerStatus.INSUFFICIENT_INFORMATION, INFORMATION_NOT_FOUND, List.of());
+            }
+
+            long qaStartedAt = System.nanoTime();
+            GeneratedAnswer generatedAnswer;
+            try {
+                generatedAnswer = answerGenerator.generate(question, context);
+                validateGeneratedAnswer(generatedAnswer, context);
+            } catch (RuntimeException exception) {
+                LOGGER.info("qa_completed outcome=ERROR durationMs={}", elapsedMillis(qaStartedAt));
+                throw exception;
+            }
+            LOGGER.info("qa_completed outcome={} durationMs={}",
+                    generatedAnswer.status(), elapsedMillis(qaStartedAt));
+
+            if (generatedAnswer.status() == AnswerStatus.INSUFFICIENT_INFORMATION) {
+                LOGGER.info("question_cycle_completed outcome=INSUFFICIENT_INFORMATION totalDurationMs={}",
+                        elapsedMillis(cycleStartedAt));
+                return new EventAnswer(AnswerStatus.INSUFFICIENT_INFORMATION, INFORMATION_NOT_FOUND, List.of());
+            }
+
+            EventAnswer answer = new EventAnswer(AnswerStatus.ANSWERED, generatedAnswer.text(),
+                    projectSources(context, generatedAnswer.evidenceChunkIds()));
+            LOGGER.info("question_cycle_completed outcome=ANSWERED totalDurationMs={}",
+                    elapsedMillis(cycleStartedAt));
+            return answer;
+        } catch (RuntimeException exception) {
+            LOGGER.info("question_cycle_completed outcome=ERROR totalDurationMs={}",
+                    elapsedMillis(cycleStartedAt));
+            throw exception;
         }
+    }
 
-        GeneratedAnswer generatedAnswer = answerGenerator.generate(question, context);
-        validateGeneratedAnswer(generatedAnswer, context);
-
-        if (generatedAnswer.status() == AnswerStatus.INSUFFICIENT_INFORMATION) {
-            return new EventAnswer(AnswerStatus.INSUFFICIENT_INFORMATION, INFORMATION_NOT_FOUND, List.of());
-        }
-
-        return new EventAnswer(AnswerStatus.ANSWERED, generatedAnswer.text(),
-                projectSources(context, generatedAnswer.evidenceChunkIds()));
+    private static long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
     }
 
     private EventQuestion validateQuestion(String questionText) {

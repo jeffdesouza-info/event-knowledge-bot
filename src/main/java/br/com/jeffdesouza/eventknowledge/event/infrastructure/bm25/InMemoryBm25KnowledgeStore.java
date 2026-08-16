@@ -2,6 +2,8 @@ package br.com.jeffdesouza.eventknowledge.event.infrastructure.bm25;
 
 import br.com.jeffdesouza.eventknowledge.event.application.KnowledgeChunk;
 import br.com.jeffdesouza.eventknowledge.event.application.port.KnowledgeStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 /** Store em memória que prepara e publica snapshots textuais para o BM25. */
 public final class InMemoryBm25KnowledgeStore implements KnowledgeStore {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryBm25KnowledgeStore.class);
     private static final double K1 = 1.2d;
     private static final double B = 0.75d;
     private static final int MAX_TOP_K = 5;
@@ -62,7 +65,7 @@ public final class InMemoryBm25KnowledgeStore implements KnowledgeStore {
         }
 
         int resultLimit = Math.min(limit, MAX_TOP_K);
-        return current.chunks().stream()
+        List<ScoredChunk> rankedChunks = current.chunks().stream()
                 .map(chunk -> new ScoredChunk(chunk, score(chunk.id(), queryTerms, current)))
                 .filter(scored -> scored.score() > 0.0d)
                 .sorted(Comparator.comparingDouble(ScoredChunk::score).reversed()
@@ -71,8 +74,32 @@ public final class InMemoryBm25KnowledgeStore implements KnowledgeStore {
                         .thenComparingInt(scored -> scored.chunk().ordinal())
                         .thenComparing(scored -> scored.chunk().id()))
                 .limit(resultLimit)
+                .toList();
+
+        if (LOGGER.isDebugEnabled()) {
+            for (int index = 0; index < rankedChunks.size(); index++) {
+                ScoredChunk candidate = rankedChunks.get(index);
+                KnowledgeChunk chunk = candidate.chunk();
+                LOGGER.debug("retrieval_candidate rank={} score={} chunkId={} document={} page={} snippet={}",
+                        index + 1,
+                        candidate.score(),
+                        chunk.id(),
+                        chunk.documentName(),
+                        chunk.page(),
+                        snippet(chunk.text()));
+            }
+        }
+
+        return rankedChunks.stream()
                 .map(ScoredChunk::chunk)
                 .toList();
+    }
+
+    private static String snippet(String text) {
+        String normalized = text.replaceAll("\\s+", " ").trim();
+        return normalized.length() <= 120
+                ? normalized
+                : normalized.substring(0, 120) + "...";
     }
 
     private static double score(String chunkId, Set<String> queryTerms, Bm25Snapshot snapshot) {
