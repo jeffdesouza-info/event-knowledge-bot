@@ -452,13 +452,42 @@ especificação e não devem competir com a entrega.
 
 ---
 
-## 6. HTTP/UI → container → OCI → entrega
+## 6. HTTP/UI → diagnóstico → container → OCI → entrega
 
-### [ ] T018 — Empacotar a aplicação em imagem Docker única
+### [ ] T018 — Adicionar diagnostic logging ao pipeline de retrieval e QA
+
+- **Prioridade:** P0
+- **Requisitos:** SEC-001, SEC-005, SEC-007, NFR-004, NFR-005
+- **Dependências:** T017
+- **Trabalho esperado:** adicionar logging estruturado e seguro, usando somente
+  as capacidades já disponíveis de Spring Boot/SLF4J/Logback, sem introduzir
+  tecnologia ou infraestrutura adicional de observability. No nível `INFO`,
+  registrar o ciclo da consulta, a quantidade de chunks recuperados, o outcome
+  do retrieval/QA e os tempos de processamento relevantes. No nível `DEBUG`,
+  registrar para cada candidato recuperado o rank, score, `chunkId`, documento,
+  página e um pequeno snippet limitado do conteúdo. O logging deve ser
+  somente diagnóstico e não pode alterar o comportamento funcional do
+  retrieval ou QA.
+
+  Aplicar limites e filtros para nunca registrar segredos, headers de
+  autenticação, prompts completos, respostas HTTP brutas ou conteúdo integral
+  dos chunks/documentos. O desenho deve evitar que mensagens de exceção ou
+  valores de configuração exponham credenciais.
+- **Validação:** testes ou inspeção verificam eventos `INFO` para início/fim da
+  consulta, quantidade de chunks, outcome e durações; eventos `DEBUG` contêm
+  os metadados e snippet limitado dos candidatos; e nenhum log contém chave,
+  header de autenticação, prompt completo, resposta HTTP bruta ou texto
+  integral. A mesma entrada produz o mesmo resultado funcional com logging
+  habilitado ou desabilitado.
+- **Critério de conclusão:** o pipeline de retrieval e QA possui diagnóstico
+  suficiente para acompanhar consulta, candidatos, resultado e latência sem
+  alterar o contrato, a ordenação, a resposta ou as garantias de grounding.
+
+### [ ] T019 — Empacotar a aplicação em imagem Docker única
 
 - **Prioridade:** P0
 - **Requisitos:** DEP-001, DEP-004, NFR-004, NFR-005
-- **Dependências:** T017
+- **Dependências:** T018
 - **Trabalho esperado:** criar `Dockerfile` para construir/executar o JAR com
   os PDFs empacotados, porta 8080 e configuração exclusivamente por ambiente.
   Não incluir `.env`, chaves, caminhos da máquina de desenvolvimento, banco ou
@@ -469,11 +498,11 @@ especificação e não devem competir com a entrega.
 - **Critério de conclusão:** existe um único artefato de execução reproduzível
   para o MVP, capaz de iniciar com os PDFs dentro do JAR.
 
-### [ ] T019 — Publicar e validar o MVP na OCI Compute
+### [ ] T020 — Publicar e validar o MVP na OCI Compute
 
 - **Prioridade:** P0
 - **Requisitos:** FR-013, DEP-002 a DEP-004, cenário 6
-- **Dependências:** T018
+- **Dependências:** T019
 - **Trabalho esperado:** provisionar a VM Linux mínima em subnet pública, IP
   público, Internet Gateway, entrada TCP 8080 e SSH restrito ao IP
   administrativo; executar o único container com `--restart unless-stopped`.
@@ -489,11 +518,11 @@ especificação e não devem competir com a entrega.
   aplicação funcional que percorre o fluxo completo de pergunta até resposta
   fundamentada.
 
-### [ ] T020 — Finalizar README, evidências e checklist de repositório para entrega
+### [ ] T021 — Finalizar README, evidências e checklist de repositório para entrega
 
 - **Prioridade:** P0
 - **Requisitos:** REP-001 a REP-004, README-001 a README-008, DEP-005, DoD
-- **Dependências:** T017, T019
+- **Dependências:** T017, T020
 - **Trabalho esperado:** atualizar o README com visão do problema, arquitetura
   real, tecnologias, execução local, configuração por placeholders, corpus
   canônico, perguntas e respostas reais em pt-BR, fontes, teste, imagem Docker,
@@ -507,7 +536,7 @@ especificação e não devem competir com a entrega.
   a solução a partir do repositório público, do README e da URL sem acesso a
   informações privadas.
 
-**Ponto natural de commit (opcional):** `build: containerize event knowledge bot` após T018; `docs: document OCI deployment and public MVP` após T019–T020.
+**Ponto natural de commit (opcional):** `build: containerize event knowledge bot` após T019; `docs: document OCI deployment and public MVP` após T020–T021.
 
 ---
 
