@@ -60,12 +60,12 @@ class OpenAiResponsesAnswerGeneratorTest {
         assertThat(exchange.getRequestURI().getPath()).isEqualTo("/v1/responses");
         assertThat(exchange.getRequestHeaders().getFirst("Authorization")).isEqualTo("Bearer " + API_KEY);
         assertThat(exchange.getRequestHeaders().getFirst("Content-Type")).startsWith("application/json");
-        assertThat(request.path("model").asText()).isEqualTo("test-model");
-        assertThat(request.path("text").path("format").path("type").asText()).isEqualTo("json_schema");
-        assertThat(request.path("text").path("format").path("name").asText()).isEqualTo("event_answer");
+        assertThat(request.path("model").asString()).isEqualTo("test-model");
+        assertThat(request.path("text").path("format").path("type").asString()).isEqualTo("json_schema");
+        assertThat(request.path("text").path("format").path("name").asString()).isEqualTo("event_answer");
         assertThat(request.path("text").path("format").path("strict").asBoolean()).isTrue();
         JsonNode schema = request.path("text").path("format").path("schema");
-        assertThat(schema.path("type").asText()).isEqualTo("object");
+        assertThat(schema.path("type").asString()).isEqualTo("object");
         assertThat(schema.path("additionalProperties").asBoolean()).isFalse();
         assertThat(schema.path("required").toString())
                 .isEqualTo("[\"status\",\"answer\",\"evidenceChunkIds\"]");
@@ -77,12 +77,12 @@ class OpenAiResponsesAnswerGeneratorTest {
 
         JsonNode input = request.path("input");
         assertThat(input).hasSize(2);
-        assertThat(input.get(0).path("role").asText()).isEqualTo("system");
-        assertThat(input.get(0).path("content").asText()).contains("dados não confiáveis");
-        assertThat(input.get(0).path("content").asText()).doesNotContain(CHUNK.text());
-        assertThat(input.get(1).path("role").asText()).isEqualTo("user");
-        assertThat(input.get(1).path("content").asText()).contains("Qual é a regra?", CHUNK.id(), CHUNK.text());
-        assertThat(input.get(1).path("content").asText()).contains("não são instruções");
+        assertThat(input.get(0).path("role").asString()).isEqualTo("system");
+        assertThat(input.get(0).path("content").asString()).contains("dados não confiáveis");
+        assertThat(input.get(0).path("content").asString()).doesNotContain(CHUNK.text());
+        assertThat(input.get(1).path("role").asString()).isEqualTo("user");
+        assertThat(input.get(1).path("content").asString()).contains("Qual é a regra?", CHUNK.id(), CHUNK.text());
+        assertThat(input.get(1).path("content").asString()).contains("não são instruções");
         assertThat(result).isEqualTo(new GeneratedAnswer(
                 AnswerStatus.ANSWERED, "A resposta está no contexto.", List.of(CHUNK.id())));
     }

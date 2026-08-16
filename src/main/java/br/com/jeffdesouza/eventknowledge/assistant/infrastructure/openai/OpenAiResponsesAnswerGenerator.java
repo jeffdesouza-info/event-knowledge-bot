@@ -13,7 +13,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,12 +125,12 @@ public final class OpenAiResponsesAnswerGenerator implements AnswerGenerator {
             throw new AnswerGenerationException("Resposta da OpenAI sem output válido");
         }
         for (JsonNode item : output) {
-            if (!"message".equals(item.path("type").asText())) {
+            if (!"message".equals(item.path("type").asString())) {
                 continue;
             }
             for (JsonNode content : item.path("content")) {
-                if ("output_text".equals(content.path("type").asText())) {
-                    return parseStructuredText(content.path("text").asText(null));
+                if ("output_text".equals(content.path("type").asString())) {
+                    return parseStructuredText(content.path("text").asString(null));
                 }
             }
         }
@@ -147,7 +146,7 @@ public final class OpenAiResponsesAnswerGenerator implements AnswerGenerator {
             String statusValue = requiredText(structured, "status");
             AnswerStatus status = AnswerStatus.valueOf(statusValue);
             JsonNode answerNode = structured.get("answer");
-            if (answerNode == null || !(answerNode.isNull() || answerNode.isTextual())) {
+            if (answerNode == null || !(answerNode.isNull() || answerNode.isString())) {
                 throw new AnswerGenerationException("Campo answer inválido na resposta da OpenAI");
             }
             JsonNode idsNode = structured.get("evidenceChunkIds");
@@ -156,12 +155,12 @@ public final class OpenAiResponsesAnswerGenerator implements AnswerGenerator {
             }
             List<String> ids = new ArrayList<>();
             for (JsonNode id : idsNode) {
-                if (!id.isTextual()) {
+                if (!id.isString()) {
                     throw new AnswerGenerationException("ID de evidência inválido na resposta da OpenAI");
                 }
-                ids.add(id.textValue());
+                ids.add(id.stringValue());
             }
-            return new GeneratedAnswer(status, answerNode.isNull() ? null : answerNode.textValue(), ids);
+            return new GeneratedAnswer(status, answerNode.isNull() ? null : answerNode.stringValue(), ids);
         } catch (AnswerGenerationException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -171,10 +170,10 @@ public final class OpenAiResponsesAnswerGenerator implements AnswerGenerator {
 
     private String requiredText(JsonNode node, String field) {
         JsonNode value = node.get(field);
-        if (value == null || !value.isTextual() || value.textValue().isBlank()) {
+        if (value == null || !value.isString() || value.stringValue().isBlank()) {
             throw new AnswerGenerationException("Campo " + field + " ausente ou inválido na resposta da OpenAI");
         }
-        return value.textValue();
+        return value.stringValue();
     }
 
     private static String requireConfigured(String value, String name) {
