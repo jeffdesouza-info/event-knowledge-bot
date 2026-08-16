@@ -48,6 +48,6 @@ public class QuestionController {
     }
 
     private SourceResponse toSourceResponse(SourceReference source) {
-        return new SourceResponse(source.documentName(), source.page(), "/documents/" + source.documentName());
+        return new SourceResponse(source.documentName(), source.page(), DocumentController.urlFor(source.documentName()));
     }
 }
