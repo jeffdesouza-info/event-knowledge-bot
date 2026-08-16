@@ -13,9 +13,12 @@ class InMemoryBm25KnowledgeStoreTest {
     private final Bm25Tokenizer tokenizer = new Bm25Tokenizer();
 
     @Test
-    void tokenizesLowercaseDiacriticsAndUnicodeAlphaNumericRuns() {
-        assertThat(tokenizer.tokenize("Árvore Coração 42, naïve co-op")).containsExactly(
-                "arvore", "coracao", "42", "naive", "co", "op");
+    void tokenizesLowercaseDiacriticsUnicodeAndStopwordsExplicitly() {
+        assertThat(tokenizer.tokenize("ÁRVORE Coração 42, naïve co-op"))
+                .containsExactly("arvore", "coracao", "42", "naive", "co", "op");
+        assertThat(tokenizer.tokenize("A que horas se inicia o evento?"))
+                .containsExactly("horas", "inicia", "evento")
+                .doesNotContain("a", "que", "se", "o");
     }
 
     @Test
@@ -27,9 +30,12 @@ class InMemoryBm25KnowledgeStoreTest {
         assertThat(snapshot.chunks()).containsExactly(chunk);
         assertThat(snapshot.chunks().getFirst().text()).isEqualTo("Água no São Paulo!");
         assertThat(snapshot.chunks().getFirst().documentName()).isEqualTo("guide.pdf");
-        assertThat(snapshot.termFrequencyByChunkId().get("c1")).containsEntry("agua", 1)
-                .containsEntry("sao", 1);
+        String agua = tokenizer.tokenize("Água").getFirst();
+        String sao = tokenizer.tokenize("São").getFirst();
+        assertThat(snapshot.termFrequencyByChunkId().get("c1")).containsEntry(agua, 1)
+                .containsEntry(sao, 1);
         assertThat(snapshot.termFrequencyByChunkId().get("c1")).doesNotContainKey("água");
+        assertThat(snapshot.termFrequencyByChunkId().get("c1")).doesNotContainKey("no");
     }
 
     @Test
@@ -38,9 +44,12 @@ class InMemoryBm25KnowledgeStoreTest {
                 chunk("c1", "Gato gato azul", "a.pdf", 1, 1),
                 chunk("c2", "Gato verde", "b.pdf", 1, 1)));
 
-        assertThat(snapshot.termFrequencyByChunkId().get("c1")).containsEntry("gato", 2);
-        assertThat(snapshot.documentFrequency()).containsEntry("gato", 2)
-                .containsEntry("azul", 1).containsEntry("verde", 1);
+        String gato = tokenizer.tokenize("Gato").getFirst();
+        String azul = tokenizer.tokenize("azul").getFirst();
+        String verde = tokenizer.tokenize("verde").getFirst();
+        assertThat(snapshot.termFrequencyByChunkId().get("c1")).containsEntry(gato, 2);
+        assertThat(snapshot.documentFrequency()).containsEntry(gato, 2)
+                .containsEntry(azul, 1).containsEntry(verde, 1);
         assertThat(snapshot.tokenCountByChunkId()).containsEntry("c1", 3).containsEntry("c2", 2);
         assertThat(snapshot.averageChunkSize()).isEqualTo(2.5);
     }
@@ -137,6 +146,30 @@ class InMemoryBm25KnowledgeStoreTest {
         store.replaceAll(List.of(chunk));
 
         assertThat(store.search("portao PREMIUM", 5)).containsExactly(chunk);
+    }
+
+    @Test
+    void removesFunctionalWordsBeforeTheyCanInfluenceBm25Ranking() {
+        InMemoryBm25KnowledgeStore store = store();
+        KnowledgeChunk relevant = chunk("relevant", "Horário de início do evento", "guide.pdf", 1, 1);
+        KnowledgeChunk faq = chunk("faq", "se que a o de em", "faq.pdf", 1, 1);
+        store.replaceAll(List.of(relevant, faq));
+
+        assertThat(store.snapshot().documentFrequency()).doesNotContainKeys("se", "que", "a", "o", "de", "em");
+        assertThat(store.search("A que horas se inicia o evento", 5)).containsExactly(relevant);
+    }
+
+    @Test
+    void keepsRetrievalOrderingWhenEquivalentQueryStopwordsAreAddedOrRemoved() {
+        InMemoryBm25KnowledgeStore store = store();
+        KnowledgeChunk strongest = chunk("strong", "Credenciamento evento evento", "guide.pdf", 1, 1);
+        KnowledgeChunk weaker = chunk("weak", "Credenciamento evento", "guide.pdf", 1, 2);
+        store.replaceAll(List.of(strongest, weaker));
+
+        List<KnowledgeChunk> withoutStopwords = store.search("credenciamento evento", 5);
+        List<KnowledgeChunk> withStopwords = store.search("A credenciamento e evento", 5);
+
+        assertThat(withStopwords).containsExactlyElementsOf(withoutStopwords);
     }
 
     private static InMemoryBm25KnowledgeStore store() {

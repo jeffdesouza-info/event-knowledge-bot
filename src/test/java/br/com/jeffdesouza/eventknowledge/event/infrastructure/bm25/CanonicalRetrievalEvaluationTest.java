@@ -59,6 +59,34 @@ class CanonicalRetrievalEvaluationTest {
         assertThat(topFive).as("O controle negativo serve para inspeção; não exige lista vazia").isNotNull();
     }
 
+    @Test
+    void retrievesSufficientEvidenceForTheFourStartTimeParaphrases() throws IOException {
+        InMemoryBm25KnowledgeStore store = indexedCanonicalCorpus();
+        List<String> questions = List.of(
+                "Qual é o horário de início do evento?",
+                "A que horas começa o evento?",
+                "A que horas se inicia o evento?",
+                "Que horas inicia o evento?");
+
+        for (String question : questions) {
+            List<KnowledgeChunk> topFive = store.search(question, TOP_K);
+            boolean hasSufficientEvidence = topFive.stream()
+                    .anyMatch(CanonicalRetrievalEvaluationTest::containsStartTimeEvidence);
+            System.out.printf("Paráfrase [%s]: %s%n  top-5: %s%n",
+                    hasSufficientEvidence ? "HIT" : "MISS", question, describe(topFive));
+            assertThat(hasSufficientEvidence)
+                    .as("Evidência factual suficiente no top-5 para: %s", question)
+                    .isTrue();
+        }
+    }
+
+    private static boolean containsStartTimeEvidence(KnowledgeChunk chunk) {
+        String normalizedText = normalize(chunk.text());
+        return "event-guide.pdf".equals(chunk.documentName())
+                && normalizedText.contains("horario do evento")
+                && normalizedText.contains("08:00");
+    }
+
     private static InMemoryBm25KnowledgeStore indexedCanonicalCorpus() throws IOException {
         ClasspathPdfDocumentAdapter documents = new ClasspathPdfDocumentAdapter();
         var ingestion = new KnowledgeIngestion(
@@ -96,6 +124,12 @@ class CanonicalRetrievalEvaluationTest {
                 .toString();
     }
 
+    private static String normalize(String value) {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT);
+    }
+
     private record EvaluationCase(int number, String question, Set<String> documents, Set<String> evidenceTerms) {
         private EvaluationCase(int number, String question) {
             this(number, question, Set.of(), Set.of());
@@ -107,10 +141,5 @@ class CanonicalRetrievalEvaluationTest {
                     && evidenceTerms.stream().allMatch(term -> normalizedText.contains(normalize(term)));
         }
 
-        private static String normalize(String value) {
-            return Normalizer.normalize(value, Normalizer.Form.NFD)
-                    .replaceAll("\\p{M}", "")
-                    .toLowerCase(Locale.ROOT);
-        }
     }
 }

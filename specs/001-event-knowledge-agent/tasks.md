@@ -22,9 +22,9 @@ especificação e não devem competir com a entrega.
 - Os documentos são carregados no startup por `Resource`/`InputStream`, sem
   caminhos locais, e os chunks ficam em memória durante a execução.
 - A recuperação é BM25 textual em memória, com `top-k=5`, usando uma estratégia
-  compartilhada de tokenização, remoção de stopwords comuns do português e
-  normalização morfológica leve; continua sem embeddings, banco, vetores ou
-  busca semântica.
+  compartilhada de tokenização, lowercase, remoção de diacríticos, tokens
+  Unicode e stopwords comuns do português; continua sem embeddings, banco,
+  vetores ou busca semântica.
 - A extração usa PDFBox 3; o provedor é OpenAI via Responses API e `RestClient`,
   atrás do port `AnswerGenerator`, sem SDK OpenAI ou LangChain.
 - O retorno do modelo usa Structured Outputs/JSON Schema e é validado antes de
@@ -172,9 +172,8 @@ especificação e não devem competir com a entrega.
   do PDF de origem permanecem independentes e servem para rastreabilidade e
   atribuição de fontes. A análise lexical deve ser determinística e reutilizável
   pela indexação e pelas consultas, com minúsculas, remoção de diacríticos apenas
-  para busca, tokens Unicode alfanuméricos, stopwords comuns do português e
-  normalização morfológica leve. Não introduzir embeddings, banco ou mecanismo
-  externo.
+  para busca, tokens Unicode alfanuméricos e stopwords comuns do português. Não
+  introduzir embeddings, banco ou mecanismo externo.
 - **Validação:** testes determinísticos validam tokenização, estatísticas BM25,
   substituição atômica e preservação do texto/origem original para exibição.
 - **Critério de conclusão:** existe uma base em memória consistente e pronta
@@ -487,18 +486,25 @@ especificação e não devem competir com a entrega.
   suficiente para acompanhar consulta, candidatos, resultado e latência sem
   alterar o contrato, a ordenação, a resposta ou as garantias de grounding.
 
-### [ ] T019 — Melhorar a normalização lexical em português no retrieval BM25
+### [ ] T019 — Consolidar a normalização lexical em português no retrieval BM25
 
 - **Prioridade:** P0
 - **Requisitos:** FR-007, FR-008, AI-001, AI-002, NFR-004
 - **Dependências:** T009, T018
 - **Trabalho esperado:** revisar exclusivamente a análise lexical do retrieval
-  BM25 textual em memória para tratar stopwords comuns do português e aplicar
-  stemming ou uma normalização morfológica leve apropriada para português.
-  Garantir que exatamente a mesma estratégia determinística de tokenização,
-  remoção de stopwords e normalização seja usada na indexação dos chunks e nas
-  consultas. Preservar integralmente o texto original dos `KnowledgeChunk` para
-  contexto enviado ao LLM, exibição, snippets e fontes.
+  BM25 textual em memória e consolidar a variante stopwords-only: lowercase,
+  remoção de diacríticos, tokenização Unicode e remoção de stopwords comuns do
+  português. Garantir que exatamente a mesma estratégia determinística seja
+  usada na indexação dos chunks e nas consultas. Preservar integralmente o
+  texto original dos `KnowledgeChunk` para contexto enviado ao LLM, exibição,
+  snippets e fontes.
+
+  A normalização morfológica adicional não foi adotada. O experimento com
+  Lucene `PortugueseLightStemFilter` manteve o recall, mas não apresentou
+  benefício mensurável e piorou o ranking da evidência em três dos quatro
+  cenários exploratórios comparativos. Portanto, stemming, stemmer artesanal,
+  equivalências morfológicas e dependências Lucene de análise ficam fora da
+  implementação final da T019.
 
   Manter `top-k=5` e o retrieval como BM25 textual em memória. Não introduzir
   embeddings, banco vetorial, busca semântica, serviços externos, dicionários ou
@@ -506,9 +512,9 @@ especificação e não devem competir com a entrega.
   tratamentos especiais de equivalência de termos ou condicionais baseadas nas
   perguntas exploratórias. Não alterar o comportamento funcional do QA,
   `AnswerGenerator`, Structured Outputs ou regras de grounding. Caso stopwords
-  e normalização morfológica geral não sejam suficientes para algum cenário,
-  reportar a limitação residual, sem introduzir equivalências, regras ou
-  condicionais específicas para fazer os testes passarem.
+  não sejam suficientes para algum cenário, reportar a limitação residual, sem
+  introduzir equivalências, regras ou condicionais específicas para fazer os
+  testes passarem.
 - **Validação:** executar novamente toda a matriz de avaliação existente e
   preservar `HitRate@5 = 100%` nos 11 casos positivos obrigatórios.
 
@@ -526,8 +532,9 @@ especificação e não devem competir com a entrega.
   específico.
 
   Registrar quais cenários apresentaram melhoria, quais permaneceram
-  inalterados e eventuais mudanças relevantes no ranking. A validação deve
-  comprovar que a nova análise lexical não introduziu regressões na matriz
+  inalterados e eventuais mudanças relevantes no ranking, comparando a variante
+  stopwords-only com o experimento de stemming rejeitado. A validação deve
+  comprovar que a análise lexical final não introduziu regressões na matriz
   original nem nos casos negativos existentes.
 
   Caso algum dos cenários exploratórios continue sem recuperar evidência
@@ -536,15 +543,14 @@ especificação e não devem competir com a entrega.
   destinado apenas a fazer o cenário passar.
 
   A suíte completa de testes deve permanecer passando após a alteração.
-- **Critério de conclusão:** a melhoria aumenta de forma mensurável a robustez
-  lexical do retrieval para perguntas naturais em português, preservando
-  `HitRate@5 = 100%` na matriz original, sem alterar o texto original dos chunks
-  e sem modificar o contrato funcional do QA. Os cenários exploratórios
-  identificados devem ser reexecutados para medir o efeito da mudança; eventuais
-  limitações residuais devem ser registradas, sem introduzir regras,
-  equivalências ou condicionais específicos para forçar resultados. Esta tarefa
-  representa a revisão consciente da decisão anterior de não usar stemming,
-  motivada pela evidência reproduzível dos testes exploratórios e diagnostic logs.
+- **Critério de conclusão:** a variante stopwords-only preserva a melhoria
+  lexical mensurável obtida sobre o baseline anterior, com `HitRate@5 = 100%`
+  na matriz original e evidência factual suficiente no top-5 dos quatro casos
+  exploratórios, sem exigir rank ou `chunkId` específico. O texto original dos
+  chunks e o contrato funcional do QA permanecem inalterados. A tarefa registra
+  a decisão baseada no experimento: normalização morfológica adicional não foi
+  adotada porque não trouxe benefício mensurável e piorou o ranking da
+  evidência em três dos quatro cenários comparativos.
 
 ### [ ] T020 — Empacotar a aplicação em imagem Docker única
 
