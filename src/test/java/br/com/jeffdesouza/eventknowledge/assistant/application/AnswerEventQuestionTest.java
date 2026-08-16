@@ -85,9 +85,7 @@ class AnswerEventQuestionTest {
     @Test
     void sourcesAreProjectedOnlyFromLocalChunkMetadata() {
         AnswerGenerator generator = (question, context) -> new GeneratedAnswer(
-                AnswerStatus.ANSWERED,
-                "Resposta com uma fonte inventada pelo modelo",
-                List.of("invented-id", FAQ.id(), GUIDE.id(), FAQ.id()));
+                AnswerStatus.ANSWERED, "Resposta com uma fonte do contexto", List.of(GUIDE.id()));
         AnswerEventQuestion useCase = new AnswerEventQuestion(
                 store((question, limit) -> List.of(GUIDE, FAQ)), generator);
 
@@ -95,8 +93,89 @@ class AnswerEventQuestionTest {
 
         assertThat(answer.sources()).extracting("documentName", "page")
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("event-guide.pdf", 1),
-                        org.assertj.core.groups.Tuple.tuple("faq.pdf", 2));
+                        org.assertj.core.groups.Tuple.tuple("event-guide.pdf", 1));
+    }
+
+    @Test
+    void rejectsAnsweredWithNullEmptyOrBlankAnswer() {
+        for (String text : java.util.Arrays.asList(null, "", "   ")) {
+            AnswerGenerator generator = (question, context) ->
+                    new GeneratedAnswer(AnswerStatus.ANSWERED, text, List.of(GUIDE.id()));
+
+            assertThatThrownBy(() -> new AnswerEventQuestion(
+                    store((question, limit) -> List.of(GUIDE)), generator).answer("Pergunta"))
+                    .isInstanceOf(AnswerGenerationException.class);
+        }
+    }
+
+    @Test
+    void rejectsAnsweredWithoutEvidence() {
+        AnswerGenerator generator = (question, context) ->
+                new GeneratedAnswer(AnswerStatus.ANSWERED, "Resposta", List.of());
+
+        assertThatThrownBy(() -> new AnswerEventQuestion(
+                store((question, limit) -> List.of(GUIDE)), generator).answer("Pergunta"))
+                .isInstanceOf(AnswerGenerationException.class);
+    }
+
+    @Test
+    void rejectsEvidenceIdOutsideRetrievedContext() {
+        AnswerGenerator generator = (question, context) ->
+                new GeneratedAnswer(AnswerStatus.ANSWERED, "Resposta", List.of("unknown"));
+
+        assertThatThrownBy(() -> new AnswerEventQuestion(
+                store((question, limit) -> List.of(GUIDE)), generator).answer("Pergunta"))
+                .isInstanceOf(AnswerGenerationException.class);
+    }
+
+    @Test
+    void rejectsDuplicateEvidenceIds() {
+        AnswerGenerator generator = (question, context) ->
+                new GeneratedAnswer(AnswerStatus.ANSWERED, "Resposta", List.of(GUIDE.id(), GUIDE.id()));
+
+        assertThatThrownBy(() -> new AnswerEventQuestion(
+                store((question, limit) -> List.of(GUIDE)), generator).answer("Pergunta"))
+                .isInstanceOf(AnswerGenerationException.class);
+    }
+
+    @Test
+    void normalizesInsufficientInformationAndDiscardsGeneratedAnswer() {
+        AnswerGenerator generator = (question, context) -> new GeneratedAnswer(
+                AnswerStatus.INSUFFICIENT_INFORMATION, "conteúdo que deve ser ignorado", List.of());
+
+        var answer = new AnswerEventQuestion(
+                store((question, limit) -> List.of(GUIDE)), generator).answer("Pergunta");
+
+        assertThat(answer.status()).isEqualTo(AnswerStatus.INSUFFICIENT_INFORMATION);
+        assertThat(answer.text()).isEqualTo(AnswerEventQuestion.INFORMATION_NOT_FOUND);
+        assertThat(answer.sources()).isEmpty();
+    }
+
+    @Test
+    void rejectsInsufficientInformationWithEvidence() {
+        AnswerGenerator generator = (question, context) -> new GeneratedAnswer(
+                AnswerStatus.INSUFFICIENT_INFORMATION, null, List.of(GUIDE.id()));
+
+        assertThatThrownBy(() -> new AnswerEventQuestion(
+                store((question, limit) -> List.of(GUIDE)), generator).answer("Pergunta"))
+                .isInstanceOf(AnswerGenerationException.class);
+    }
+
+    @Test
+    void deduplicatesSourcesInRetrievedContextOrder() {
+        KnowledgeChunk guideSecondChunk = new KnowledgeChunk(
+                "guide:1:2", "Mais informação.", "event-guide.pdf", 1, 2);
+        AnswerGenerator generator = (question, context) -> new GeneratedAnswer(
+                AnswerStatus.ANSWERED, "Resposta", List.of(guideSecondChunk.id(), GUIDE.id(), FAQ.id()));
+
+        var answer = new AnswerEventQuestion(
+                store((question, limit) -> List.of(FAQ, guideSecondChunk, GUIDE)), generator)
+                .answer("Pergunta");
+
+        assertThat(answer.sources()).extracting("documentName", "page")
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("faq.pdf", 2),
+                        org.assertj.core.groups.Tuple.tuple("event-guide.pdf", 1));
     }
 
     @Test
@@ -104,7 +183,7 @@ class AnswerEventQuestionTest {
         AtomicInteger generations = new AtomicInteger();
         AnswerGenerator generator = (question, context) -> {
             generations.incrementAndGet();
-            return new GeneratedAnswer(AnswerStatus.ANSWERED, "Resposta", List.of());
+            return new GeneratedAnswer(AnswerStatus.ANSWERED, "Resposta", List.of(GUIDE.id()));
         };
 
         new AnswerEventQuestion(store((question, limit) -> List.of(GUIDE)), generator)

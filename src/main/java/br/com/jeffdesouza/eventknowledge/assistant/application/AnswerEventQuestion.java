@@ -8,6 +8,7 @@ import br.com.jeffdesouza.eventknowledge.event.application.KnowledgeChunk;
 import br.com.jeffdesouza.eventknowledge.event.application.port.KnowledgeStore;
 import br.com.jeffdesouza.eventknowledge.event.domain.SourceReference;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -51,11 +52,14 @@ public final class AnswerEventQuestion {
             return new EventAnswer(AnswerStatus.INSUFFICIENT_INFORMATION, INFORMATION_NOT_FOUND, List.of());
         }
 
-        GeneratedAnswer generatedAnswer = Objects.requireNonNull(
-                answerGenerator.generate(question, context), "Generated answer must not be null");
-        return new EventAnswer(
-                generatedAnswer.status(),
-                generatedAnswer.text(),
+        GeneratedAnswer generatedAnswer = answerGenerator.generate(question, context);
+        validateGeneratedAnswer(generatedAnswer, context);
+
+        if (generatedAnswer.status() == AnswerStatus.INSUFFICIENT_INFORMATION) {
+            return new EventAnswer(AnswerStatus.INSUFFICIENT_INFORMATION, INFORMATION_NOT_FOUND, List.of());
+        }
+
+        return new EventAnswer(AnswerStatus.ANSWERED, generatedAnswer.text(),
                 projectSources(context, generatedAnswer.evidenceChunkIds()));
     }
 
@@ -74,5 +78,38 @@ public final class AnswerEventQuestion {
                 .map(chunk -> new SourceReference(chunk.documentName(), chunk.page()))
                 .distinct()
                 .toList();
+    }
+
+    private void validateGeneratedAnswer(GeneratedAnswer generatedAnswer, List<KnowledgeChunk> context) {
+        if (generatedAnswer == null) {
+            throw new AnswerGenerationException("Generated answer must not be null");
+        }
+
+        Set<String> contextIds = context.stream()
+                .map(KnowledgeChunk::id)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        List<String> evidenceChunkIds = generatedAnswer.evidenceChunkIds();
+        Set<String> uniqueEvidenceIds = new HashSet<>(evidenceChunkIds);
+
+        if (uniqueEvidenceIds.size() != evidenceChunkIds.size()) {
+            throw new AnswerGenerationException("Generated answer contains duplicate evidence chunk ids");
+        }
+        if (!contextIds.containsAll(uniqueEvidenceIds)) {
+            throw new AnswerGenerationException("Generated answer contains evidence outside the retrieved context");
+        }
+
+        if (generatedAnswer.status() == AnswerStatus.ANSWERED) {
+            if (generatedAnswer.text() == null || generatedAnswer.text().isBlank()) {
+                throw new AnswerGenerationException("Answered result must contain a non-blank answer");
+            }
+            if (evidenceChunkIds.isEmpty()) {
+                throw new AnswerGenerationException("Answered result must contain evidence");
+            }
+            return;
+        }
+
+        if (!evidenceChunkIds.isEmpty()) {
+            throw new AnswerGenerationException("Insufficient information result must not contain evidence");
+        }
     }
 }
