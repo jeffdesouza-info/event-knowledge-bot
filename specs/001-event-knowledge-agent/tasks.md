@@ -21,8 +21,10 @@ especificação e não devem competir com a entrega.
   empacotados em `src/main/resources/documents/pdfs`.
 - Os documentos são carregados no startup por `Resource`/`InputStream`, sem
   caminhos locais, e os chunks ficam em memória durante a execução.
-- A recuperação é BM25 textual em memória, com `top-k=5`, sem embeddings,
-  banco, vetores, stemming ou busca semântica.
+- A recuperação é BM25 textual em memória, com `top-k=5`, usando uma estratégia
+  compartilhada de tokenização, remoção de stopwords comuns do português e
+  normalização morfológica leve; continua sem embeddings, banco, vetores ou
+  busca semântica.
 - A extração usa PDFBox 3; o provedor é OpenAI via Responses API e `RestClient`,
   atrás do port `AnswerGenerator`, sem SDK OpenAI ou LangChain.
 - O retorno do modelo usa Structured Outputs/JSON Schema e é validado antes de
@@ -168,9 +170,11 @@ especificação e não devem competir com a entrega.
   conjunto de chunks e tamanho médio dos chunks. Para o cálculo BM25, cada
   `KnowledgeChunk` é tratado como a unidade documental ranqueável. Os metadados
   do PDF de origem permanecem independentes e servem para rastreabilidade e
-  atribuição de fontes. Tokenizar com minúsculas, remoção de diacríticos apenas
-  para busca e tokens Unicode alfanuméricos. Não introduzir stemming, embeddings,
-  banco ou mecanismo externo.
+  atribuição de fontes. A análise lexical deve ser determinística e reutilizável
+  pela indexação e pelas consultas, com minúsculas, remoção de diacríticos apenas
+  para busca, tokens Unicode alfanuméricos, stopwords comuns do português e
+  normalização morfológica leve. Não introduzir embeddings, banco ou mecanismo
+  externo.
 - **Validação:** testes determinísticos validam tokenização, estatísticas BM25,
   substituição atômica e preservação do texto/origem original para exibição.
 - **Critério de conclusão:** existe uma base em memória consistente e pronta
@@ -483,11 +487,70 @@ especificação e não devem competir com a entrega.
   suficiente para acompanhar consulta, candidatos, resultado e latência sem
   alterar o contrato, a ordenação, a resposta ou as garantias de grounding.
 
-### [ ] T019 — Empacotar a aplicação em imagem Docker única
+### [ ] T019 — Melhorar a normalização lexical em português no retrieval BM25
+
+- **Prioridade:** P0
+- **Requisitos:** FR-007, FR-008, AI-001, AI-002, NFR-004
+- **Dependências:** T009, T018
+- **Trabalho esperado:** revisar exclusivamente a análise lexical do retrieval
+  BM25 textual em memória para tratar stopwords comuns do português e aplicar
+  stemming ou uma normalização morfológica leve apropriada para português.
+  Garantir que exatamente a mesma estratégia determinística de tokenização,
+  remoção de stopwords e normalização seja usada na indexação dos chunks e nas
+  consultas. Preservar integralmente o texto original dos `KnowledgeChunk` para
+  contexto enviado ao LLM, exibição, snippets e fontes.
+
+  Manter `top-k=5` e o retrieval como BM25 textual em memória. Não introduzir
+  embeddings, banco vetorial, busca semântica, serviços externos, dicionários ou
+  regras específicas para fatos, documentos ou perguntas do corpus. Não criar
+  tratamentos especiais de equivalência de termos ou condicionais baseadas nas
+  perguntas exploratórias. Não alterar o comportamento funcional do QA,
+  `AnswerGenerator`, Structured Outputs ou regras de grounding. Caso stopwords
+  e normalização morfológica geral não sejam suficientes para algum cenário,
+  reportar a limitação residual, sem introduzir equivalências, regras ou
+  condicionais específicas para fazer os testes passarem.
+- **Validação:** executar novamente toda a matriz de avaliação existente e
+  preservar `HitRate@5 = 100%` nos 11 casos positivos obrigatórios.
+
+  Reexecutar também os seguintes cenários exploratórios identificados durante
+  os testes manuais:
+
+  - `Qual é o horário de início do evento?`;
+  - `A que horas começa o evento?`;
+  - `A que horas se inicia o evento?`;
+  - `Que horas inicia o evento?`.
+
+  Para cada cenário, comparar o resultado obtido após a alteração com o
+  baseline registrado antes da T019, verificando se o top-5 contém evidência
+  factual suficiente para sustentar a resposta, sem exigir rank ou `chunkId`
+  específico.
+
+  Registrar quais cenários apresentaram melhoria, quais permaneceram
+  inalterados e eventuais mudanças relevantes no ranking. A validação deve
+  comprovar que a nova análise lexical não introduziu regressões na matriz
+  original nem nos casos negativos existentes.
+
+  Caso algum dos cenários exploratórios continue sem recuperar evidência
+  suficiente, registrar essa limitação residual em vez de introduzir regras,
+  equivalências de termos, condicionais ou qualquer outro tratamento específico
+  destinado apenas a fazer o cenário passar.
+
+  A suíte completa de testes deve permanecer passando após a alteração.
+- **Critério de conclusão:** a melhoria aumenta de forma mensurável a robustez
+  lexical do retrieval para perguntas naturais em português, preservando
+  `HitRate@5 = 100%` na matriz original, sem alterar o texto original dos chunks
+  e sem modificar o contrato funcional do QA. Os cenários exploratórios
+  identificados devem ser reexecutados para medir o efeito da mudança; eventuais
+  limitações residuais devem ser registradas, sem introduzir regras,
+  equivalências ou condicionais específicos para forçar resultados. Esta tarefa
+  representa a revisão consciente da decisão anterior de não usar stemming,
+  motivada pela evidência reproduzível dos testes exploratórios e diagnostic logs.
+
+### [ ] T020 — Empacotar a aplicação em imagem Docker única
 
 - **Prioridade:** P0
 - **Requisitos:** DEP-001, DEP-004, NFR-004, NFR-005
-- **Dependências:** T018
+- **Dependências:** T019
 - **Trabalho esperado:** criar `Dockerfile` para construir/executar o JAR com
   os PDFs empacotados, porta 8080 e configuração exclusivamente por ambiente.
   Não incluir `.env`, chaves, caminhos da máquina de desenvolvimento, banco ou
@@ -498,11 +561,11 @@ especificação e não devem competir com a entrega.
 - **Critério de conclusão:** existe um único artefato de execução reproduzível
   para o MVP, capaz de iniciar com os PDFs dentro do JAR.
 
-### [ ] T020 — Publicar e validar o MVP na OCI Compute
+### [ ] T021 — Publicar e validar o MVP na OCI Compute
 
 - **Prioridade:** P0
 - **Requisitos:** FR-013, DEP-002 a DEP-004, cenário 6
-- **Dependências:** T019
+- **Dependências:** T020
 - **Trabalho esperado:** provisionar a VM Linux mínima em subnet pública, IP
   público, Internet Gateway, entrada TCP 8080 e SSH restrito ao IP
   administrativo; executar o único container com `--restart unless-stopped`.
@@ -518,11 +581,11 @@ especificação e não devem competir com a entrega.
   aplicação funcional que percorre o fluxo completo de pergunta até resposta
   fundamentada.
 
-### [ ] T021 — Finalizar README, evidências e checklist de repositório para entrega
+### [ ] T022 — Finalizar README, evidências e checklist de repositório para entrega
 
 - **Prioridade:** P0
 - **Requisitos:** REP-001 a REP-004, README-001 a README-008, DEP-005, DoD
-- **Dependências:** T017, T020
+- **Dependências:** T017, T021
 - **Trabalho esperado:** atualizar o README com visão do problema, arquitetura
   real, tecnologias, execução local, configuração por placeholders, corpus
   canônico, perguntas e respostas reais em pt-BR, fontes, teste, imagem Docker,
@@ -536,7 +599,7 @@ especificação e não devem competir com a entrega.
   a solução a partir do repositório público, do README e da URL sem acesso a
   informações privadas.
 
-**Ponto natural de commit (opcional):** `build: containerize event knowledge bot` após T019; `docs: document OCI deployment and public MVP` após T020–T021.
+**Ponto natural de commit (opcional):** `build: containerize event knowledge bot` após T020; `docs: document OCI deployment and public MVP` após T021–T022.
 
 ---
 
@@ -555,6 +618,12 @@ atendidas e houver evidência registrada para cada uma:
   tratado como evidência factual suficiente, resultando em
   `INSUFFICIENT_INFORMATION` quando a informação necessária não está sustentada
   pelos documentos.
+- [ ] O retrieval BM25 mantém `HitRate@5 = 100%` na matriz original e os quatro
+  cenários exploratórios de horário são reexecutados após a melhoria lexical,
+  com seus resultados comparados ao baseline e eventuais limitações residuais
+  registradas. A alteração não introduz regressões na matriz original nem
+  regras, equivalências ou condicionais específicos para forçar resultados,
+  mantendo top-k=5 e preservando o texto original dos chunks.
 - [ ] Perguntas válidas percorrem recuperação, contexto e OpenAI Responses API
   com Structured Outputs; a saída é validada e só expõe fontes derivadas de
   `evidenceChunkIds` pertencentes ao contexto enviado.
