@@ -6,7 +6,7 @@ This project implements an AI-powered knowledge agent capable of answering natur
 
 The project is also intended to demonstrate a clear and maintainable software engineering approach using Java, Domain-Driven Design principles, Hexagonal Architecture, Retrieval-Augmented Generation (RAG), and cloud deployment.
 
-The delivery deadline is August 19, 2026. Simplicity and successful delivery take precedence over unnecessary architectural complexity.
+The delivery deadline is August 23, 2026. Simplicity and successful delivery take precedence over unnecessary architectural complexity.
 
 ---
 

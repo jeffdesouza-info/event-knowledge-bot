@@ -29,7 +29,7 @@ The MVP must demonstrate a complete working flow from source data to a grounded 
 
 The project is being developed under a strict delivery deadline:
 
-**2026-08-19**
+**2026-08-23**
 
 This deadline is an architectural constraint for the MVP.
 
@@ -250,7 +250,7 @@ Do not present personal stylistic preferences as correctness problems.
 
 ## 7. MVP Delivery Priority
 
-The project deadline is **2026-08-19**.
+The project deadline is **2026-08-23**.
 
 The agent must actively protect MVP scope.
 
@@ -1061,7 +1061,7 @@ is testable
           +
 is deployable
           +
-is demonstrable by 2026-08-19
+is demonstrable by 2026-08-23
 ```
 
 When architectural sophistication conflicts with successful MVP delivery, prefer the simplest solution that still satisfies the project's documented principles and requirements.

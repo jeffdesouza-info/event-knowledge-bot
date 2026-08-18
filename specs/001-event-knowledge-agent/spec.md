@@ -2,7 +2,7 @@
 
 **Feature ID:** `001-event-knowledge-agent`
 **Status:** Draft
-**Target delivery:** August 19, 2026
+**Target delivery:** August 23, 2026
 
 ---
 

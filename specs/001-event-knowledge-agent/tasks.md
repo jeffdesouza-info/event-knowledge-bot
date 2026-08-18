@@ -11,7 +11,7 @@ PDF → ingestão → chunks → BM25 → contexto recuperado → LLM
 ```
 
 Todas as tarefas abaixo são **P0**, pois compõem o caminho necessário para a
-entrega demonstrável até **19/08/2026**. Não há tarefas P1 ou P2 neste arquivo:
+entrega demonstrável até **23/08/2026**. Não há tarefas P1 ou P2 neste arquivo:
 as evoluções fora do MVP já estão explicitamente adiadas pelo plano e pela
 especificação e não devem competir com a entrega.
 
