@@ -223,7 +223,7 @@ Health check responde que a API está em funcionamento.
   </p>
 
   <img
-    src="docs/images/railway-logs.png"
+    src="docs/images/railway-deploy-logs.png"
     alt="Logs de execução do Event Knowledge Bot no Railway"
     width="900"
   />
