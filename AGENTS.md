@@ -680,11 +680,13 @@ If validation could not be performed, report that explicitly.
 
 ---
 
-## 23. OCI Deployment
+## 23. Cloud Deployment
 
-A publicly accessible deployment on **Oracle Cloud Infrastructure (OCI)** is part of the project delivery expectations.
+A publicly accessible cloud deployment is part of the project delivery expectations.
 
-Architecture and implementation decisions must therefore consider deployability.
+For the current MVP delivery, Railway is the selected deployment platform.
+
+Architecture and implementation decisions must therefore preserve deployability.
 
 Avoid introducing local-only assumptions.
 
@@ -699,9 +701,11 @@ The deployed application must not depend on:
 
 Prefer deployment simplicity.
 
-Do not introduce complex OCI infrastructure unless required for the MVP.
+The current deployment uses the project's Dockerfile, Railway service
+variables and a Railway-managed public HTTPS domain.
 
-The final application must expose the functionality required for demonstration through the deployment mechanism defined in the plan.
+Do not introduce additional cloud infrastructure unless required by a
+concrete MVP need.
 
 ---
 
@@ -712,7 +716,7 @@ Never commit:
 * API keys;
 * tokens;
 * passwords;
-* OCI credentials;
+* cloud platform credentials;
 * AI provider credentials;
 * private keys;
 * sensitive configuration.

@@ -14,7 +14,7 @@ Legenda: **R** requisito da constitution/spec; **E** decisão já estabelecida; 
 | Extração | N | Adicionar Apache PDFBox 3 para extrair texto página a página de `Resource`/`InputStream`, sem depender de caminhos locais. |
 | LLM | E/N | Manter OpenAI, indicado por `OPENAI_API_KEY`; implementar adapter para Responses API com `RestClient`, sem LangChain ou SDK adicional. |
 | Interface | R/N | API REST e página estática same-origin em HTML/CSS/JavaScript puro. |
-| Deploy | R/N | Uma VM OCI Compute com um único container Docker, sem banco ou serviços gerenciados adicionais. |
+| Deploy | R/E | Railway executando a imagem Docker única a partir do repositório GitHub, com configuração de runtime por variáveis de ambiente e domínio HTTPS público gerenciado pela plataforma. |
 
 ## MVP Critical Path
 
@@ -35,7 +35,7 @@ grounded answer
  ↓
 HTTP/UI
  ↓
-OCI
+Railway
 ```
 
 ## Arquitetura e fluxo
@@ -154,7 +154,21 @@ A página em `src/main/resources/static/` terá formulário, estado de carregame
   - controller, validação, fontes e documento permitido;
   - adapter OpenAI com servidor HTTP simulado. Um smoke test real fica em perfil separado e nunca integra a suíte padrão.
 
-- Deploy OCI: criar uma OCI Compute VM Linux mínima, em subnet pública, com IP público, regra de entrada TCP 8080 e SSH restrito ao IP administrativo. Executar uma imagem Docker única com `--restart unless-stopped`, PDFs incluídos no JAR e variáveis em arquivo externo protegido sob `/opt/event-knowledge-bot/.env`. Validar `/actuator/health`, interface pública e as perguntas documentadas. OCI requer subnet pública, IP público, Internet Gateway e regras de rede para exposição direta. [Documentação OCI](https://docs.oracle.com/en-us/iaas/Content/Network/Tasks/managingpublicIPs.htm)
+- Deploy Railway: conectar o serviço ao repositório GitHub e utilizar o
+  `Dockerfile` do projeto como artefato canônico de build e execução.
+  A aplicação deve aceitar a porta fornecida pela plataforma através de
+  `${PORT:8080}`, preservando 8080 como fallback local.
+
+  Configurar `OPENAI_API_KEY` e `OPENAI_MODEL` como Service Variables na
+  Railway, sem versionar segredos. `PORT` é fornecida automaticamente pela
+  plataforma e não deve ser configurada manualmente.
+
+  Expor o serviço por Public Networking com domínio HTTPS gerado pela Railway.
+  Validar externamente `/actuator/health`, a interface web, uma pergunta
+  respondível, a apresentação das fontes e a abertura do PDF referenciado.
+
+  O deployment não requer VM administrada, SSH, configuração de firewall,
+  proxy reverso, banco de dados ou serviços auxiliares.
 
 - Entregar posteriormente `Dockerfile`, configuração de execução, README com URL pública e exemplos reais, além da documentação de arquitetura e deploy. Não haverá dependência de Object Storage, banco ou infraestrutura distribuída.
 
@@ -170,4 +184,4 @@ Authentication         → out of MVP
 Multilingual retrieval → post-MVP
 ```
 
-Também ficam fora do MVP: CSV adicional a PDF, upload e edição de documentos, multi-evento, memória conversacional, ferramentas de busca externas, rate limiting avançado, OCI Object Storage, CI/CD avançado, Kubernetes e Infrastructure as Code.
+Também ficam fora do MVP: CSV adicional a PDF, upload e edição de documentos, multi-evento, memória conversacional, ferramentas de busca externas, rate limiting avançado, CI/CD avançado, Kubernetes e Infrastructure as Code.

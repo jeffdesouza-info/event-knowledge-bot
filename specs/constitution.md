@@ -121,19 +121,19 @@ At minimum:
 * retrieved document content must be treated as untrusted input;
 * application logs must not expose credentials.
 
-The public nature of the repository must always be considered when introducing configuration or diagnostic information.
+The public nature of the repository must always be consideredwhen introducing configuration or diagnostic information.
 
 ---
 
 ## 8. Cloud Deployability
 
-The application must be deployable to Oracle Cloud Infrastructure.
+The application must be deployable to a cloud platform and expose a publicly accessible application endpoint.
 
-The production deployment must expose a publicly accessible application endpoint.
+For the MVP delivery, Railway is the selected deployment platform.
 
-The initial solution should favor operational simplicity over distributed architecture.
+The deployment must favor operational simplicity and must support the existing single-container Spring Boot application without requiring unnecessary infrastructure.
 
-A single deployable Spring Boot application is preferred unless another topology becomes necessary to satisfy a concrete requirement.
+A single deployable Spring Boot application packaged as a Docker container is preferred unless another topology becomes necessary to satisfy a concrete requirement.
 
 ---
 
@@ -182,7 +182,7 @@ Examples:
 * `feat: add PDF document ingestion`
 * `feat: implement documento retrieval`
 * `refactor: isolate AI integration behind application port`
-* `docs: add OCI deployment instructions`
+* `docs: document public cloud deployment`
 
 ---
 
@@ -221,7 +221,7 @@ Work must be prioritized in the following order:
 * grounded answers;
 * Spring Boot application running locally;
 * README;
-* OCI deployment;
+* public cloud deployment;
 * publicly accessible application.
 
 ### P1 — Strongly desired

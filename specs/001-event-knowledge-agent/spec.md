@@ -12,7 +12,9 @@ The Event Knowledge Agent allows users to ask natural-language questions about a
 
 The initial implementation focuses on demonstrating an end-to-end Retrieval-Augmented Generation (RAG) workflow using PDF documents as the event knowledge source.
 
-The application must be accessible through a public deployment on Oracle Cloud Infrastructure.
+The application must be accessible through a public cloud deployment.
+
+For the initial delivery, Railway is the selected deployment platform.
 
 For the initial delivery, the event knowledge corpus and supported user questions are expected to use Brazilian Portuguese (pt-BR).
 
@@ -187,11 +189,11 @@ The interface does not require a JavaScript framework.
 
 ---
 
-### FR-013 — Run on Oracle Cloud Infrastructure
+### FR-013 — Provide a public cloud deployment
 
-The application must be deployable and executed on Oracle Cloud Infrastructure.
+The application must be deployable and executed on a cloud platform.
 
-The deployed application must be reachable through a public URL.
+For the initial delivery, the application is deployed on Railway and must be reachable through a public HTTPS URL.
 
 ---
 
@@ -332,7 +334,7 @@ The application must run successfully as a Spring Boot application.
 
 ### DEP-002
 
-The application must be deployed to Oracle Cloud Infrastructure.
+The application must be deployed to Railway.
 
 ---
 
@@ -426,7 +428,7 @@ Examples must preserve the language used by the actual agent, which should be Br
 
 ### README-007 — Cloud deployment
 
-Information about the OCI deployment.
+Information about the Railway deployment.
 
 ---
 
@@ -458,7 +460,7 @@ Changing the concrete LLM provider should not require redesigning the event-rela
 
 ### NFR-004 — Local development
 
-The project should be executable locally without requiring OCI services other than an external AI provider.
+The project should be executable locally without requiring the production cloud platform.
 
 ---
 
@@ -591,11 +593,12 @@ Validation and security scenarios that intentionally exercise behavior not repre
 
 ### Scenario 6 — Public deployment
 
-**Given** the application has been deployed to OCI
-**When** a user accesses the published URL
+**Given** the application has been deployed to Railway
+**When** a user accesses the published HTTPS URL
 **Then** the application interface loads in Brazilian Portuguese
 **And** a valid event question can be submitted
-**And** a generated answer is displayed in Brazilian Portuguese.
+**And** a generated answer is displayed in Brazilian Portuguese
+**And** the referenced source document can be opened when available.
 
 ---
 
@@ -622,10 +625,11 @@ The feature is considered complete when:
 * [ ] secrets are excluded from the public repository;
 * [ ] automated tests cover essential application behavior;
 * [ ] the README satisfies all mandatory documentation requirements;
-* [ ] the application is deployed to OCI;
-* [ ] the OCI deployment has a public URL;
+* [ ] the application is deployed to Railway;
+* [ ] the Railway deployment has a public HTTPS URL;
 * [ ] the deployed application successfully answers at least the documented example questions;
-* [ ] evidence of the working OCI deployment can be captured for submission.
+* [ ] answer sources can be opened from the deployed interface when available;
+* [ ] evidence of the working public deployment can be captured for submission.
 
 ---
 
@@ -654,7 +658,6 @@ The following features are explicitly outside the initial delivery scope unless 
 * Redis;
 * Kafka or other message brokers;
 * Kubernetes;
-* OCI Kubernetes Engine;
 * Infrastructure as Code;
 * advanced CI/CD;
 * advanced observability;
@@ -683,6 +686,5 @@ Possible future improvements include:
 * conversation memory;
 * advanced input and output guardrails;
 * structured AI evaluations;
-* OCI Object Storage;
 * automated CI/CD;
 * multi-event knowledge bases.

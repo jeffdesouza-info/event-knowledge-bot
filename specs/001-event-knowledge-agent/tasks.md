@@ -7,7 +7,7 @@ ordenadas pelo **MVP Critical Path** definido no plano:
 
 ```text
 PDF → ingestão → chunks → BM25 → contexto recuperado → LLM
-    → resposta fundamentada → HTTP/UI → OCI
+    → resposta fundamentada → HTTP/UI → Railway
 ```
 
 Todas as tarefas abaixo são **P0**, pois compõem o caminho necessário para a
@@ -30,7 +30,7 @@ especificação e não devem competir com a entrega.
 - O retorno do modelo usa Structured Outputs/JSON Schema e é validado antes de
   chegar ao usuário; não há fallback silencioso baseado apenas em prompt.
 - A entrega é uma única aplicação Spring Boot, com REST, página estática
-  same-origin e um container Docker em uma VM OCI Compute, sem serviços
+  same-origin e um container Docker executado no Railway, sem serviços
   gerenciados adicionais.
 
 ## Convenções de execução
@@ -449,13 +449,13 @@ especificação e não devem competir com a entrega.
   confirma saúde `UP`, cenário respondível, insuficiência sem fonte e interface
   em pt-BR.
 - **Critério de conclusão:** o caminho completo pode ser demonstrado localmente
-  sem serviços OCI, banco ou chamada obrigatória à OpenAI.
+  sem depender da plataforma cloud de produção, banco ou chamada obrigatória à OpenAI.
 
 **Ponto natural de commit (opcional):** `feat: expose event knowledge through web api and ui` após T014–T017.
 
 ---
 
-## 6. HTTP/UI → diagnóstico → container → OCI → entrega
+## 6. HTTP/UI → diagnóstico → container → Railway → entrega
 
 ### [ ] T018 — Adicionar diagnostic logging ao pipeline de retrieval e QA
 
@@ -558,34 +558,49 @@ especificação e não devem competir com a entrega.
 - **Requisitos:** DEP-001, DEP-004, NFR-004, NFR-005
 - **Dependências:** T019
 - **Trabalho esperado:** criar `Dockerfile` para construir/executar o JAR com
-  os PDFs empacotados, porta 8080 e configuração exclusivamente por ambiente.
-  Não incluir `.env`, chaves, caminhos da máquina de desenvolvimento, banco ou
-  serviços auxiliares na imagem.
-- **Validação:** build da imagem e execução local com arquivo externo de
-  variáveis confirmam `/actuator/health` e a página; inspeção da imagem/contexto
-  confirma ausência de segredo.
+  os PDFs empacotados e configuração exclusivamente por ambiente. A aplicação
+  deve aceitar a porta fornecida pelo ambiente de execução por meio da variável
+  `PORT`, mantendo `8080` como fallback para execução local. Não incluir `.env`,
+  chaves, caminhos da máquina de desenvolvimento, banco ou serviços auxiliares
+  na imagem.
+- **Validação:** build da imagem e execução local com configuração externa
+  confirmam `/actuator/health` e a página usando a porta padrão `8080`;
+  execução com `PORT` definida externamente confirma que a aplicação respeita
+  a porta fornecida pelo ambiente. Inspeção da imagem e do contexto de build
+  confirma ausência de segredos.
 - **Critério de conclusão:** existe um único artefato de execução reproduzível
-  para o MVP, capaz de iniciar com os PDFs dentro do JAR.
+  e portável para o MVP, capaz de iniciar com os PDFs dentro do JAR e de operar
+  tanto com a porta local padrão quanto com uma porta fornecida externamente
+  pela plataforma de execução.
 
-### [ ] T021 — Publicar e validar o MVP na OCI Compute
+### [ ] T021 — Publicar e validar o MVP no Railway
 
 - **Prioridade:** P0
-- **Requisitos:** FR-013, DEP-002 a DEP-004, cenário 6
+- **Requisitos:** FR-013, DEP-002 a DEP-005, cenário 6
 - **Dependências:** T020
-- **Trabalho esperado:** provisionar a VM Linux mínima em subnet pública, IP
-  público, Internet Gateway, entrada TCP 8080 e SSH restrito ao IP
-  administrativo; executar o único container com `--restart unless-stopped`.
-  Manter as variáveis de runtime em
-  `/opt/event-knowledge-bot/.env` protegido e fora do repositório. Não criar
-  banco, Object Storage, serviços gerenciados, Kubernetes ou infraestrutura
-  adicional.
-- **Validação:** a partir de rede externa, confirmar URL pública, healthcheck,
-  interface em pt-BR, resposta para uma pergunta documentada, fontes abríveis e
-  cenário de insuficiência; capturar evidências para submissão sem revelar
-  segredos.
-- **Critério de conclusão:** o avaliador pode acessar por URL pública uma
-  aplicação funcional que percorre o fluxo completo de pergunta até resposta
-  fundamentada.
+- **Trabalho esperado:** conectar o serviço Railway ao repositório GitHub e
+  realizar o build/deploy utilizando o `Dockerfile` existente. Configurar
+  `OPENAI_API_KEY` e `OPENAI_MODEL` como variáveis externas do serviço, sem
+  expor segredos no repositório. Permitir que a aplicação utilize a variável
+  `PORT` fornecida automaticamente pela plataforma, mantendo 8080 como fallback
+  local. Gerar um domínio HTTPS público pela funcionalidade Public Networking
+  da Railway.
+
+  Não introduzir VM administrada, SSH, banco, proxy reverso, Kubernetes ou
+  infraestrutura adicional.
+
+- **Validação:** a partir de rede externa, confirmar:
+  - `/actuator/health` com status `UP`;
+  - carregamento da interface em pt-BR;
+  - startup com os quatro documentos canônicos e 33 chunks;
+  - resposta para uma pergunta documentada;
+  - exibição da fonte correspondente;
+  - abertura do PDF da fonte através da aplicação;
+  - funcionamento da integração OpenAI utilizando configuração externa.
+
+- **Critério de conclusão:** o avaliador pode acessar por URL HTTPS pública
+  uma aplicação funcional que percorre o fluxo completo da pergunta à resposta
+  fundamentada e permite consultar a evidência documental correspondente.
 
 ### [ ] T022 — Finalizar README, evidências e checklist de repositório para entrega
 
@@ -595,7 +610,7 @@ especificação e não devem competir com a entrega.
 - **Trabalho esperado:** atualizar o README com visão do problema, arquitetura
   real, tecnologias, execução local, configuração por placeholders, corpus
   canônico, perguntas e respostas reais em pt-BR, fontes, teste, imagem Docker,
-  deploy OCI e URL pública. Confirmar que a documentação não descreve recursos
+  deploy Railway e URL pública. Confirmar que a documentação não descreve recursos
   inexistentes, que o repositório público não contém segredos e que o histórico
   contém incrementos significativos correspondentes aos marcos concluídos.
 - **Validação:** revisão cruzada README/implementação/deploy; varredura de
@@ -605,7 +620,7 @@ especificação e não devem competir com a entrega.
   a solução a partir do repositório público, do README e da URL sem acesso a
   informações privadas.
 
-**Ponto natural de commit (opcional):** `build: containerize event knowledge bot` após T020; `docs: document OCI deployment and public MVP` após T021–T022.
+**Ponto natural de commit (opcional):** `build: containerize event knowledge bot` após T020; `docs: document public deployment and MVP delivery` após T021–T022.
 
 ---
 
@@ -642,11 +657,12 @@ atendidas e houver evidência registrada para cada uma:
   o contrato.
 - [ ] A página same-origin em pt-BR permite perguntar, aguardar, ler resposta,
   abrir fontes e entender erros sem expor detalhes técnicos.
-- [ ] Não há credenciais reais no repositório, imagem ou logs; a chave é
-  fornecida externamente e o `.env` de produção fica protegido na VM.
+- [ ] Não há credenciais reais no repositório, imagem ou logs; a chave e demais
+  configurações sensíveis são fornecidas externamente por Service Variables da
+  Railway.
 - [ ] A imagem Docker única inicia com os PDFs empacotados e a aplicação está
-  publicamente acessível na OCI pela URL documentada, com saúde e jornada
-  principal validadas externamente.
+  publicamente acessível pela URL HTTPS documentada da Railway, com healthcheck,
+  interface, jornada principal e abertura das fontes validados externamente.
 - [ ] O README descreve somente a implementação real, inclui arquitetura,
   configuração, execução, exemplos reais, deploy e URL pública; o repositório
   público apresenta histórico incremental significativo e evidências de deploy.
