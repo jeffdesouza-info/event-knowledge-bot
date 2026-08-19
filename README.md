@@ -2,6 +2,8 @@
 
 O Event Knowledge Bot responde perguntas em português brasileiro sobre um evento usando somente informações sustentadas pelo corpus documental fornecido. Ele permite consultar PDFs por linguagem natural, mantendo a resposta ligada às evidências recuperadas e informando quando os documentos não são suficientes.
 
+- Este projeto foi desenvolvido como **challenge** do programa de ensino **ONE AI Tech Builder** da **Oracle Next Education** em parceria com **Alura**.
+
 ## Arquitetura e fluxo
 
 A aplicação é um monólito Spring Boot, com limites simples entre ingestão/retrieval, caso de uso de perguntas, adaptador OpenAI e entrega HTTP. Não há banco de dados, embeddings, vector store, fila ou serviço de busca externo.
