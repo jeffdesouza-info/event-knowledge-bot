@@ -7,29 +7,29 @@ O Event Knowledge Bot responde perguntas em português brasileiro sobre um event
 A aplicação é um monólito Spring Boot, com limites simples entre ingestão/retrieval, caso de uso de perguntas, adaptador OpenAI e entrega HTTP. Não há banco de dados, embeddings, vector store, fila ou serviço de busca externo.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph runtime["Fluxo funcional da aplicação"]
-        PDFs["Quatro PDFs canônicos"] --> Startup["Ingestão no startup"]
-        Startup --> Chunks["Chunks com documento e página"]
-        Chunks --> BM25["BM25 textual em memória"]
+        PDFs["Quatro PDFs<br/>canônicos"] --> Startup["Ingestão<br/>no startup"]
+        Startup --> Chunks["Chunks com<br/>documento e página"]
+        Chunks --> BM25["BM25 textual<br/>em memória"]
 
-        Question["Pergunta pt-BR"] --> UI["Interface web"]
-        UI --> HTTP["POST /api/questions"]
+        Question["Pergunta<br/>pt-BR"] --> UI["Interface<br/>web"]
+        UI --> HTTP["API HTTP<br/>POST /api/questions"]
         HTTP --> BM25
 
-        BM25 --> Context["Contexto recuperado - top-k 5"]
-        Context --> Responses["OpenAI Responses API"]
-        Responses --> Grounding["Validação de grounding e evidências"]
+        BM25 --> Context["Contexto recuperado<br/>top-k 5"]
+        Context --> Responses["OpenAI<br/>Responses API"]
+        Responses --> Grounding["Validação de grounding<br/>e evidências"]
         Grounding --> HTTP
         HTTP --> UI
 
-        PDFs --> Documents["GET /documents/:filename"]
+        PDFs --> Documents["Documentos<br/>GET /documents/:filename"]
         UI --> Documents
     end
 
     subgraph deployment["Empacotamento e deploy"]
-        App["Aplicação Spring Boot"] --> Docker["Imagem Docker"]
-        Docker --> Railway["Railway - HTTPS público"]
+        App["Aplicação<br/>Spring Boot"] --> Docker["Imagem<br/>Docker"]
+        Docker --> Railway["Railway<br/>HTTPS público"]
     end
 ```
 
