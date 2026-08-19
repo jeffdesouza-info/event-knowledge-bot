@@ -96,6 +96,38 @@ Resposta: O credenciamento começa às 07:30.
 Fonte: event-guide.pdf, página 1 — /documents/event-guide.pdf
 ```
 
+Outros exemplos obtidos do deployment público:
+
+```text
+Pergunta: Qual é o horário do evento na quinta-feira?
+Resposta: Na quinta-feira, o evento acontece das 08:00 às 19:00.
+Fonte: event-guide.pdf, página 1 — /documents/event-guide.pdf
+```
+
+```text
+Pergunta: Quando acontece RAG na Prática?
+Resposta: A sessão “Retrieval-Augmented Generation na Prática” acontece das 11:25 às 12:15, na sala Aurora. A data não está informada nos trechos disponíveis.
+Fonte: event-program.pdf, página 1 — /documents/event-program.pdf
+```
+
+```text
+Pergunta: Participantes Premium precisam de inscrição adicional nos workshops?
+Resposta: Não. Participantes Premium podem acessar os workshops práticos sem inscrição adicional, mas a entrada está sujeita à capacidade da sala.
+Fontes: event-guide.pdf, página 1; event-program.pdf, página 2; faq.pdf, página 1
+```
+
+```text
+Pergunta: Qual é o nome da rede Wi-Fi?
+Resposta: FutureTech-Guest
+Fontes: venue-info.pdf, página 1; faq.pdf, página 1
+```
+
+```text
+Pergunta: O local possui acesso para pessoas com mobilidade reduzida?
+Resposta: Sim. O local possui acesso sem degraus pelos Portões A e B, elevadores para todos os andares e banheiros acessíveis próximos às salas Aurora, Atlas e Orion. Quem precisar de assistência pode solicitá-la no Credenciamento ou no balcão de informações.
+Fonte: venue-info.pdf, página 1 — /documents/venue-info.pdf
+```
+
 Exemplo sem informação suficiente:
 
 ```text
@@ -149,6 +181,54 @@ Uma avaliação completa deve conferir health check, interface, pergunta respond
 - O acesso a documentos é por allowlist do catálogo, sem leitura arbitrária de caminhos.
 - Conteúdo recuperado é dado não confiável e não pode redefinir as instruções do assistente.
 - Respostas sem evidência não são apresentadas como fatos do evento.
+
+## Demonstração
+
+### Resposta grounded com fonte
+
+A aplicação responde usando o conteúdo recuperado dos documentos e apresenta
+a fonte utilizada como evidência.
+
+<img
+  src="docs/images/app-grounded-answer-example.png"
+  alt="Event Knowledge Bot respondendo uma pergunta com fonte documental"
+  width="900"
+/>
+
+### Deployment público
+
+O MVP está publicado no Railway e acessível por HTTPS.
+
+<img
+  src="docs/images/railway-deployment.png"
+  alt="Deployment ativo do Event Knowledge Bot no Railway"
+  width="900"
+/>
+
+### Heatlh check
+
+Health check responde que a API está em funcionamento.
+
+<img
+  src="docs/images/health-check.png"
+  alt="Health check do Event Knowledge Bot"
+/>
+
+<details>
+  <summary><strong>Logs de execução</strong></summary>
+
+  <p>
+    Exemplo de logs diagnósticos do pipeline de retrieval e question answering
+    após o deploy do MVP.
+  </p>
+
+  <img
+    src="docs/images/railway-logs.png"
+    alt="Logs de execução do Event Knowledge Bot no Railway"
+    width="900"
+  />
+
+</details>
 
 ## Tecnologias
 
