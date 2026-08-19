@@ -2,7 +2,10 @@
 
 ## Estado atual e decisões
 
-O repositório contém o bootstrap Spring Boot 4.0.7 / Java 21, quatro PDFs canônicos textuais em `src/main/resources/documents/pdfs` e configuração mínima de chave OpenAI. O build-base passa; a implementação prevista neste plano ainda será responsável por adicionar a funcionalidade e os testes.
+O repositório contém a implementação do MVP em Spring Boot 4.0.7 / Java 21,
+os quatro PDFs canônicos em `src/main/resources/documents/pdfs`, retrieval
+BM25 em memória, integração com a OpenAI, interface web, container Docker e
+deployment público no Railway.
 
 Legenda: **R** requisito da constitution/spec; **E** decisão já estabelecida; **N** recomendação deste plano.
 
@@ -170,7 +173,9 @@ A página em `src/main/resources/static/` terá formulário, estado de carregame
   O deployment não requer VM administrada, SSH, configuração de firewall,
   proxy reverso, banco de dados ou serviços auxiliares.
 
-- Entregar posteriormente `Dockerfile`, configuração de execução, README com URL pública e exemplos reais, além da documentação de arquitetura e deploy. Não haverá dependência de Object Storage, banco ou infraestrutura distribuída.
+- A entrega inclui `Dockerfile`, configuração de execução, README com URL
+  pública e exemplos reais, além da documentação de arquitetura e deploy.
+  Não há dependência de Object Storage, banco ou infraestrutura distribuída.
 
 ## Deferred Decisions and Non-Goals
 
