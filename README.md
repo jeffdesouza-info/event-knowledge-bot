@@ -232,6 +232,10 @@ Health check responde que a API está em funcionamento.
 
 </details>
 
+## Tecnologias
+
+Java 21, Spring Boot 4.0.7, Spring MVC, Spring Validation, Spring Actuator, Spring RestClient, Apache PDFBox 3.0.5, BM25 textual em memória, HTML/CSS/JavaScript sem framework, Maven Wrapper, Docker e Railway.
+
 ## Considerações
 
 Posso dizer que aproveitei bem todo o curso - falando tanto no sentido do aprendizado quanto da jornada - para chegar ao **Event Knowledge Bot** que temos aqui agora.
@@ -272,7 +276,7 @@ Quero aproveitar e **agradecer imensamente**:
 
 - a **toda a comunidade ONE AI Tech** - especialmente o **Grupo 10**, do qual faço parte, e que vem se ajudando muito;
 - ao **time de instrutores da Alura** - em especial:
-  - **Eric Monné**, pelo ótimo trabalho na condução da **imersão**;
+  - **Eric Monné**, pelo ótimo trabalho na condução da imersão;
   - **Brenda Souza**, por toda a paciência na condução das lives que acompanhei;
   - **Vinicios Neves**, pelo riquíssimo conteúdo sobre desenvolvimento com agentes de IA - especialmente Claude Code - e MCP; e por passar o conteúdo de uma forma que me permitiu a fácil adaptação ao Codex;
   - **André Santana**, pelo ótimo conteúdo sobre Langchain, que há de ser essencial em muita coisa que eu pretendo fazer;
@@ -282,6 +286,4 @@ Quero aproveitar e **agradecer imensamente**:
 
 Feliz em poder participar!
 
-## Tecnologias
-
-Java 21, Spring Boot 4.0.7, Spring MVC, Spring Validation, Spring Actuator, Spring RestClient, Apache PDFBox 3.0.5, BM25 textual em memória, HTML/CSS/JavaScript sem framework, Maven Wrapper, Docker e Railway.
+Jeff de Souza
