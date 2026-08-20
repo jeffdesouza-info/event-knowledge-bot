@@ -232,6 +232,56 @@ Health check responde que a API está em funcionamento.
 
 </details>
 
+## Considerações
+
+Posso dizer que aproveitei bem todo o curso - falando tanto no sentido do aprendizado quanto da jornada - para chegar ao **Event Knowledge Bot** que temos aqui agora.
+
+Efetivamente, a intenção era poder demonstrar todo o conhecimento que adquiri durante esse período aplicando-a neste projeto. Reconheço que não consegui, de fato, colocar tudo o que pudemos aprender.
+
+Mas entendo que cheguei perto disso. `=)`
+
+Digo que foi uma experiência muito proveitosa poder fazer uma aplicação na qual pude:
+
+- aplicar conceitos de **Spec-Driven Development**;
+- integrar um agente de IA em meu código-fonte;
+- trabalhar **em conjunto** com uma IA generativa, especificando ações, delegando tarefas.
+
+Com certeza, o percurso teve seus percalços - nada é perfeito (mesmo - e principalmente - com IA envolvida):
+
+  - Precisei adaptar alguns conteúdos do curso à minha realidade:
+    - o uso do **Codex** no lugar do Claude Code, para aproveitar a conta que já tenho na OpenAI;
+    - a escolha de fazer esse challenge em **Java** ao invés de Python, para poder usar meus conhecimentos e, assim, trabalhar de fato **com** a IA - e não **para** a IA.
+
+  - Também tive alguma dificuldade em assimilar tanto conhecimento novo em um espaço curto de tempo, preciso reconhecer - em alguns momentos, cheguei a me sentir "burro".
+
+  - Por conta, justamente, de não conseguir ser mais célere nessa parte, optei por fazer algumas implementações de forma mais "simplificada", não usando tudo o que aprendemos, como eu pensava em um primeiro momento.
+
+  - Também entra nessa conta da simplificação por conta do tempo a decisão de implantar no Railway ao invés de implantar na OCI.
+
+No fim, posso dizer que consegui passar por todos esses percalços, com todo apoio da comounidade ONE AI Tech, o time de instrutores da Alura - e um pouco de pesquisa por fora, também.
+
+E não só isso.
+
+Também posso dizer que o conhecimento que pudemos adquirir em toda essa jornada não será, de forma alguma, perdido - muito pelo contrário, será muito bem aproveitado!
+
+Tenho a intenção de utilizar mais do que aprendemos e não coloquei aqui, como **embeddings**, **vector store**, uso de banco de dados em conjunto com IA - só isso já teria deixado este projeto muito mais interessante.
+
+E também quero, num futuro breve, aproveitar melhor do conhecimento em OCI que tenho adquirido até aqui, para poder disponibilizar esse projeto em uma infraestrutura cloud.
+
+Quero aproveitar e **agradecer imensamente**:
+
+- a **toda a comunidade ONE AI Tech** - especialmente o **Grupo 10**, do qual faço parte, e que vem se ajudando muito;
+- ao **time de instrutores da Alura** - em especial:
+  - **Eric Monné**, pelo ótimo trabalho na condução da **imersão**;
+  - **Brenda Souza**, por toda a paciência na condução das lives que acompanhei;
+  - **Vinicios Neves**, pelo riquíssimo conteúdo sobre desenvolvimento com agentes de IA - especialmente Claude Code - e MCP; e por passar o conteúdo de uma forma que me permitiu a fácil adaptação ao Codex;
+  - **André Santana**, pelo ótimo conteúdo sobre Langchain, que há de ser essencial em muita coisa que eu pretendo fazer;
+  - **Essias Souza**, pelo vasto conteúdo sobre OCI, do qual, certamente, vou fazer bom uso ainda;
+  - **Lorena Garcia**, por responder praticamente todas minhas dúvidas levantadas no fórum da Alura durante o percurso;
+- aos mantenedores dessa iniciativa **ONE - Oracle Next Education**, trazendo oportunidade de crescimento real através da facilitação ao ensino de tecnologia.
+
+Feliz em poder participar!
+
 ## Tecnologias
 
 Java 21, Spring Boot 4.0.7, Spring MVC, Spring Validation, Spring Actuator, Spring RestClient, Apache PDFBox 3.0.5, BM25 textual em memória, HTML/CSS/JavaScript sem framework, Maven Wrapper, Docker e Railway.
