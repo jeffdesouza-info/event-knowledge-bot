@@ -262,7 +262,7 @@ Com certeza, o percurso teve seus percalços - nada é perfeito (mesmo - e princ
 
   - Também entra nessa conta da simplificação por conta do tempo a decisão de implantar no Railway ao invés de implantar na OCI.
 
-No fim, posso dizer que consegui passar por todos esses percalços, com todo apoio da comounidade ONE AI Tech, o time de instrutores da Alura - e um pouco de pesquisa por fora, também.
+No fim, posso dizer que consegui passar por todos esses percalços, com todo apoio da comunidade ONE AI Tech, o time de instrutores da Alura - e um pouco de pesquisa por fora, também.
 
 E não só isso.
 
